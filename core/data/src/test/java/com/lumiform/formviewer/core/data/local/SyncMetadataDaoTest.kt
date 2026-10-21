@@ -29,4 +29,14 @@ internal class SyncMetadataDaoTest {
                 assertThat(awaitItem()?.lastError).isEqualTo("timeout")
             }
         }
+
+    @Test
+    fun get_returnsStoredEntryOrNull() =
+        runTest {
+            assertThat(dao.get("form")).isNull()
+
+            dao.upsert(SyncMetadataEntity("form", lastSyncedAt = 1, lastError = null))
+
+            assertThat(dao.get("form")?.lastSyncedAt).isEqualTo(1L)
+        }
 }

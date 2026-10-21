@@ -1,6 +1,6 @@
 # Implementation Plan — Lumiform Android Code Challenge
 
-Status: **v3. Milestones 1 (setup), 2 (network) and 4 (database) are implemented and awaiting review.**
+Status: **v4. Milestones 1–5 (setup, network, domain, database, repository) are implemented; 3 and 5 await review.**
 
 ### Decisions recorded after v2
 
@@ -378,10 +378,11 @@ data class Section(id, title, children: List<FormItem>)
 sealed interface Question : FormItem
 data class TextQuestion(id, content)
 data class ImageQuestion(id, src, title)
-data class ChoiceQuestion(id, content, responseSet: ResponseSet, selectedIds: Set<Long>)
+data class ChoiceQuestion(id, content, responseSet: ResponseSet, selectedResponseIds: Set<Long>)
 data class ResponseSet(id, multipleSelection: Boolean, responses: List<Response>)
-data class Response(id, label, score: Int?)
-data class Unsupported(id, rawType: String, children: List<FormItem>) : FormItem
+data class Response(id, label, score: Score)        // Score.Points(value) | Score.NotScored
+data class Unsupported(id, rawType: String, children: List<FormItem>) : FormContainer
+// Page, Section and Unsupported share `FormContainer { children }`; display text is nullable.
 ```
 
 ### Database schema (Room)
@@ -426,8 +427,8 @@ Order changed: domain now comes after network and database.
    (incl. an empty 2xx), client `Http` codes and `Insecure` (certificate or pin rejected, so possibly
    intercepted) are not. A `callTimeout` of 15 s bounds a refresh at ≈ 47 s in the worst case
    (3 attempts + backoff) while cached data stays on screen.
-   `ConnectionSecurityMonitor` (an interceptor on the shared client, so images are covered too)
-   exposes `isCompromised`: set on any certificate rejection, cleared by the next response that
+   `ConnectionSecurityInterceptor` (on the shared client, so images are covered too; it implements the
+   domain's `ConnectionSecurityRepository`) exposes `isCompromised`: set on any certificate rejection, cleared by the next response that
    arrives over a verified TLS connection. The UI milestone adds a non-dismissable "connection not
    secure" blocker with Retry on top of it; that blocker is also how to demo pinning with Charles
    (a release build, or `overridePins="false"` in the debug overrides).
@@ -449,12 +450,53 @@ Order changed: domain now comes after network and database.
      label) rejects the whole payload.** The DB merge deletes items missing from the snapshot, so a
      partial parse would wipe the user's answers; failing keeps the cached form intact. Unknown
      types still fall back to `Unsupported`.
-3. **Domain:** `:core:domain` module, models (incl. sealed `Score`), repository interface, use
-   cases, selection rule. *Tests:* pure JVM.
+3. ✅ **Domain:** `:core:domain` module, models (incl. sealed `Score`), repository interface, use
+   cases, selection rule. *Tests:* 15 pure JVM tests (selection rule table, every use case over a fake).
+   Decisions:
+   - **Pure Kotlin/JVM module** (`org.jetbrains.kotlin.jvm`), so the build itself rejects Android
+     imports. Use cases are `@Inject` classes via `javax.inject`, the only non-Kotlin dependency.
+   - **The selection rule is a pure function** (`toggleSelection`): multi-select toggles; single-select
+     replaces, and re-tapping the selected response clears it (also when an inconsistent stored state
+     has several).
+   - **`FormRepository.updateSelection(responseSetId, transform)`** takes the rule as a function the
+     repository applies inside a DB transaction to the *stored* response set and selection, so the
+     rule still lives in the domain but never acts on a stale screen: two quick taps, or a tap racing
+     a sync. The stored `multipleSelection` wins over the shown one, a tap on a response the sync
+     removed is ignored, a removed set is a no-op, and ids outside the set are never written (an
+     answer for a deleted response would violate its foreign key and crash).
+   - **`SyncError` is an enum** (Offline, Server, InvalidData, Insecure): the UI only needs the kind;
+     HTTP codes and causes stay in the data layer. `sync()` returns a `SyncResult` and never throws
+     for I/O, so every trigger handles failures the same way.
+   - **Display text is nullable** in the domain, because the payload doesn't guarantee it; the UI
+     decides how to render a missing title.
+   - **Time is `kotlin.time.Instant`/`Clock`** (stable since Kotlin 2.3), so tests inject a fake clock.
+   - **`ConnectionSecurityRepository`** is a domain interface; the network layer's interceptor
+     implements it, replacing the former `ConnectionSecurityMonitor`.
 4. ✅ **Database:** entities, DAOs, transactional merge sync, answers, schema export.
    *Tests:* 21 Robolectric DAO tests.
-5. **Repository + data sources:** offline-first sync, sync state, last-synced time.
-   *Tests:* fakes + in-memory DB.
+5. ✅ **Repository + data sources:** offline-first sync, sync state, last-synced time.
+   *Tests:* 14 repository tests (fake remote + in-memory Room via Robolectric + Turbine), 19 mapper
+   tests (pure JVM), 1 extra DAO test.
+   Decisions:
+   - **The form is read with one `@Transaction` Room query over `@Relation`s** (`StoredFormItem` →
+     response set → responses + answers), not by combining four table Flows: combined Flows re-query
+     independently after a sync and can briefly emit new items with old responses. Answers waiting
+     for a server delete are filtered in the mapper, matching `AnswerDao.observeAnswers`.
+   - **Mappers are pure functions:** the DTO tree is flattened declaratively (a sequence of
+     item + parent + position), and the rows are rebuilt into the domain tree sorted by position,
+     so they don't depend on query order. Unknown types and a choice without a response set become
+     `Unsupported`; `score` `Int?` becomes `Score`.
+   - **A successful sync merges the form and records `lastSyncedAt` in one transaction.** A failed
+     one records only the mapped `SyncError` and keeps the cached form and the last success time;
+     the next success clears the error. The error is stored by a stable string, like `AnswerSyncState`;
+     an unknown stored value is dropped rather than crashing.
+   - **Selection writes are a diff:** only added responses are inserted and removed ones deleted, so a
+     kept answer's `selected_at` and outbox state survive. Removal is a hard delete, since there is no
+     upload yet (Q16 option 2).
+   - **The repository and data sources are stateless and unscoped**; Room serialises the writes.
+     Two overlapping syncs simply merge twice, which is idempotent.
+   - `SyncMetadataDao` gained a suspend `get`, so a failure can keep the last success time inside
+     the transaction without collecting a Flow there.
 6. **Background sync:** HiltWorker, periodic and on-reconnect scheduling, image prefetch (if
    approved). *Tests:* work-testing.
 7. **Form screen:** ViewModel, flattened LazyColumn, hierarchy typography, accent lines, states,

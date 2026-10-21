@@ -1,5 +1,6 @@
 package com.lumiform.formviewer.core.data.remote.security
 
+import com.lumiform.formviewer.core.domain.repository.ConnectionSecurityRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,19 +14,15 @@ import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLPeerUnverifiedException
 
 /**
- * Whether a server certificate was rejected (untrusted or not pinned), i.e. traffic is likely intercepted.
+ * Tracks whether a server certificate was rejected (untrusted or not pinned), i.e. traffic is likely intercepted.
  * Lets the UI block the app until a later request gets through securely again.
  */
-interface ConnectionSecurityMonitor {
-    val isCompromised: StateFlow<Boolean>
-}
-
 @Singleton
 internal class ConnectionSecurityInterceptor
     @Inject
     constructor() :
     Interceptor,
-        ConnectionSecurityMonitor {
+        ConnectionSecurityRepository {
         private val compromised = MutableStateFlow(false)
         override val isCompromised: StateFlow<Boolean> = compromised.asStateFlow()
 

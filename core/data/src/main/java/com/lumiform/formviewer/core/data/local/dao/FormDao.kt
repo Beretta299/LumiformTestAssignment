@@ -5,6 +5,8 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
 import com.lumiform.formviewer.core.data.local.FormSnapshot
+import com.lumiform.formviewer.core.data.local.StoredFormItem
+import com.lumiform.formviewer.core.data.local.StoredResponseSet
 import com.lumiform.formviewer.core.data.local.entity.FormItemEntity
 import com.lumiform.formviewer.core.data.local.entity.ResponseEntity
 import com.lumiform.formviewer.core.data.local.entity.ResponseSetEntity
@@ -15,6 +17,10 @@ abstract class FormDao {
     @Query("SELECT * FROM form_item ORDER BY parent_id, sort_index")
     abstract fun observeItems(): Flow<List<FormItemEntity>>
 
+    @Transaction
+    @Query("SELECT * FROM form_item ORDER BY parent_id, sort_index")
+    abstract fun observeForm(): Flow<List<StoredFormItem>>
+
     @Query("SELECT * FROM response_set")
     abstract fun observeResponseSets(): Flow<List<ResponseSetEntity>>
 
@@ -23,6 +29,10 @@ abstract class FormDao {
 
     @Query("SELECT * FROM form_item WHERE id = :id")
     abstract suspend fun getItem(id: Long): FormItemEntity?
+
+    @Transaction
+    @Query("SELECT * FROM response_set WHERE id = :id")
+    abstract suspend fun getResponseSet(id: Long): StoredResponseSet?
 
     /**
      * Merges a fresh form definition into the database without losing the user's answers.
