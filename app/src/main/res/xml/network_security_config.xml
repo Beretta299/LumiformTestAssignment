@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+
+    <base-config cleartextTrafficPermitted="false" />
+
+    <!--
+        CA pins (SPKI SHA-256), not leaf pins: GitHub renews its leaf certificates often, its CAs rarely.
+        Live chain: *.github.io <- Let's Encrypt YR1 <- ISRG Root YR <- ISRG Root X1; the rest are backups.
+        The expiration makes an outdated app fall back to system trust instead of failing every request.
+    -->
+    <domain-config>
+        <domain includeSubdomains="false">gist.githubusercontent.com</domain>
+        <!-- Form images are served from raw. -->
+        <domain includeSubdomains="false">raw.githubusercontent.com</domain>
+        <pin-set expiration="2027-04-21">
+            <!-- ISRG Root X1 -->
+            <pin digest="SHA-256">C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=</pin>
+            <!-- ISRG Root YR -->
+            <pin digest="SHA-256">fk6IOKit1ild5647BH06ujSIq5XbCgqlbYl6ANhhi88=</pin>
+            <!-- ISRG Root X2 (backup) -->
+            <pin digest="SHA-256">diGVwiVYbubAI3RW4hB9xU8e/CH2GnkuvVFZE8zmgzI=</pin>
+            <!-- DigiCert Global Root G2 (backup) -->
+            <pin digest="SHA-256">i7WTqTvh0OioIruIfFR4kMPnBqrS2rdiVPl/s2uC/CY=</pin>
+            <!-- USERTrust ECC Certification Authority (backup) -->
+            <pin digest="SHA-256">ICGRfpgmOUXIWcQ/HXPLQTkFPEFPoDyjvH7ohhQpjzs=</pin>
+            <!-- USERTrust RSA Certification Authority (backup) -->
+            <pin digest="SHA-256">x4QzPSC810K5/cMjb05Qm4k3Bw5zBn4lTdO/nEW/Td4=</pin>
+        </pin-set>
+    </domain-config>
+
+    <!-- Lets debug builds trust user-installed CAs, e.g. Charles. -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" overridePins="true" />
+        </trust-anchors>
+    </debug-overrides>
+
+</network-security-config>

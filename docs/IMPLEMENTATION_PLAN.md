@@ -1,6 +1,6 @@
 # Implementation Plan — Lumiform Android Code Challenge
 
-Status: **v3. Milestones 1 (setup) and 4 (database) are implemented and awaiting review.**
+Status: **v3. Milestones 1 (setup), 2 (network) and 4 (database) are implemented and awaiting review.**
 
 ### Decisions recorded after v2
 
@@ -417,9 +417,38 @@ Order changed: domain now comes after network and database.
    `MainActivity` (`setContent {}`). Theme, colours and screens come with the UI milestone; detekt
    is deferred.
    (CI deferred to milestone 11; `:core:domain` is created in milestone 3.)
-2. **Network:** DTOs with polymorphic parsing + `Unsupported` fallback, Retrofit, OkHttp
-   (timeouts, cache, retry interceptor), network security config with pins.
-   *Tests:* fixture parsing, MockWebServer, pin rejection.
+2. ✅ **Network:** DTOs on kotlinx's built-in sealed polymorphism (`@SerialName` per type, so a new
+   type is one new class) with an `Unsupported` default deserializer, Retrofit, OkHttp
+   (timeouts, cache), retry with backoff, network security config with pins.
+   kotlinx-serialization stays on 1.11.0: with 1.12.0, Android Studio (bundled Kotlin 2.3.20) flags the
+   generated serializers as `InternalSerializationApi` opt-in errors, although the build is clean. Errors surface as a sealed
+   `FormFetchException`: `Connectivity` and transient `Http` codes are retried; `MalformedResponse`
+   (incl. an empty 2xx), client `Http` codes and `Insecure` (certificate or pin rejected, so possibly
+   intercepted) are not. A `callTimeout` of 15 s bounds a refresh at ≈ 47 s in the worst case
+   (3 attempts + backoff) while cached data stays on screen.
+   `ConnectionSecurityMonitor` (an interceptor on the shared client, so images are covered too)
+   exposes `isCompromised`: set on any certificate rejection, cleared by the next response that
+   arrives over a verified TLS connection. The UI milestone adds a non-dismissable "connection not
+   secure" blocker with Retry on top of it; that blocker is also how to demo pinning with Charles
+   (a release build, or `overridePins="false"` in the debug overrides).
+   *Tests:* JVM tests for fixture parsing, retry policy, MockWebServer (incl. HTTP cache) and
+   certificate rejection over real TLS (okhttp-tls), plus an NSC config guard test in `:app`.
+   Deviations from the plan:
+   - **Retries use coroutine `delay` in `RetryPolicy`, not an OkHttp interceptor.** The wait is
+     cancellable, testable with virtual time, and doesn't block OkHttp threads.
+   - **Pins live in the Network Security Config, enforced by the platform**, so a JVM test guards
+     the NSC itself (cleartext off, both hosts pinned, expiration and a backup pin on every
+     pin-set). OkHttp's `CertificatePinner` appears only in tests, to simulate a pin rejection for
+     the monitor and the `Insecure` mapping.
+     GitHub's content hosts now use Let's Encrypt, so the pins are ISRG Root X1 / Root YR (in the
+     live chain), with ISRG Root X2, DigiCert and USERTrust roots as backups.
+   - **The request sends `Cache-Control: max-age=0`, not `no-cache`.** OkHttp skips the conditional
+     (ETag) request on `no-cache` and always downloads the full body; `max-age=0` revalidates and
+     gets a 304 for an unchanged form. Covered by a MockWebServer test.
+   - **A known item type missing required structure (ids, a choice's response set, a response's
+     label) rejects the whole payload.** The DB merge deletes items missing from the snapshot, so a
+     partial parse would wipe the user's answers; failing keeps the cached form intact. Unknown
+     types still fall back to `Unsupported`.
 3. **Domain:** `:core:domain` module, models (incl. sealed `Score`), repository interface, use
    cases, selection rule. *Tests:* pure JVM.
 4. ✅ **Database:** entities, DAOs, transactional merge sync, answers, schema export.
