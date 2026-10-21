@@ -1,6 +1,6 @@
 # Implementation Plan — Lumiform Android Code Challenge
 
-Status: **v4. Milestones 1–5 (setup, network, domain, database, repository) are implemented; 3 and 5 await review.**
+Status: **v5. Milestones 1–6 (setup, network, domain, database, repository, background sync) are implemented; 6 awaits review.**
 
 ### Decisions recorded after v2
 
@@ -497,8 +497,42 @@ Order changed: domain now comes after network and database.
      Two overlapping syncs simply merge twice, which is idempotent.
    - `SyncMetadataDao` gained a suspend `get`, so a failure can keep the last success time inside
      the transaction without collecting a Flow there.
-6. **Background sync:** HiltWorker, periodic and on-reconnect scheduling, image prefetch (if
-   approved). *Tests:* work-testing.
+6. ✅ **Background sync:** HiltWorker, periodic and on-reconnect scheduling, image prefetch.
+   *Tests:* 18 tests: scheduler, both workers (work-testing + Robolectric), the real Hilt application
+   (schedules on start; Hilt builds every worker), the prefetch use case and the Coil image
+   repository (MockWebServer, Robolectric native graphics to decode).
+   Decisions:
+   - **WorkManager is initialised on demand with `HiltWorkerFactory`**: the app implements
+     `Configuration.Provider`, and the manifest removes the default `WorkManagerInitializer`.
+     The Application injects `SyncScheduler` as `dagger.Lazy`: creating it creates WorkManager, which
+     reads the injected factory, so it must not depend on field injection order.
+   - **`SyncScheduler` (in `:app`) holds the whole policy.** On every app start it enqueues:
+     - a unique periodic sync every 30 min on any network. `UPDATE`, not `KEEP`: it keeps the schedule
+       across restarts but lets a new app version change the interval or constraints of installed
+       work. Its first run is one interval later, since the one-time sync below covers the launch;
+     - a unique one-time sync on any network (`KEEP`). WorkManager holds it until a network is
+       available, so an app started offline syncs as soon as the connection is back, with no
+       `ConnectivityManager` callback of our own. A connection lost and regained while the app runs
+       is covered by the periodic sync and pull-to-refresh. The form screen should rely on this work
+       for the launch sync and call `SyncFormUseCase` directly only for pull-to-refresh and Retry.
+   - **`SyncWorker` maps `SyncResult`:** success → `success()` and schedules the image prefetch;
+     `Offline`/`Server` → `retry()` with exponential backoff; `InvalidData`/`Insecure` → `failure()`,
+     since retrying can't fix them (the periodic run still tries again later).
+   - **Image prefetch is its own unique one-time work on `UNMETERED`**, enqueued after each successful
+     background sync (`KEEP`: a pending prefetch reads the form when it runs). It goes through a
+     domain use case (`PrefetchFormImagesUseCase` → `ImageRepository`), so the worker knows nothing
+     of Coil. Up to 3 attempts, so an image that is gone from the server isn't retried forever.
+   - **One Coil `ImageLoader` singleton in `:core:data`** reuses the app's OkHttp client, so pinning
+     and the security interceptor cover images (its HTTP cache is dropped; Coil keeps its own). Its
+     disk cache is `filesDir/image_cache` (50 MB), which the system never clears. Prefetching
+     decodes at 1 px with the memory cache off: the disk cache keeps the downloaded bytes anyway.
+     Cached images aren't revalidated with the server (Coil 3's default), on purpose for offline
+     use; the trade-off is that an image replaced at the same URL stays stale until evicted.
+   - Retries use WorkManager's default backoff (exponential from 30 s); nothing needed tuning.
+   - *For milestone 7:* thumbnails must load through this Hilt `ImageLoader` (register it as Coil's
+     singleton via `SingletonImageLoader.Factory`, or inject it); Coil's default loader would cache
+     in `cacheDir` and bypass the shared client's security interceptor.
+   - Versions: WorkManager 2.12.0, androidx.hilt 1.4.0, Coil 3.6.3.
 7. **Form screen:** ViewModel, flattened LazyColumn, hierarchy typography, accent lines, states,
    pull-to-refresh, offline banner, unsupported-item cards, adaptive layout.
    *Tests:* ViewModel and Compose UI.
