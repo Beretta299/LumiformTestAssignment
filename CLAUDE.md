@@ -108,8 +108,9 @@ LazyColumn; fetch on launch + pull-to-refresh + retry. Still-open items are list
 ## Modules
 
 - `:app` — Compose UI, ViewModels, navigation, Hilt entry points (package `com.lumiform.formviewer`)
-- `:core:data` — Room (and later Retrofit), data sources, repository impls (package `…core.data`)
-- `:core:domain` — pure Kotlin/JVM; added once network + DB exist (planned)
+- `:core:domain` — pure Kotlin/JVM: models, repository interfaces, use cases (package `…core.domain`)
+- `:core:data` — Retrofit, Room, data sources, mappers, repository impls (package `…core.data`);
+  depends on `:core:domain`
 
 ## Commands
 
@@ -119,7 +120,7 @@ JDK 21 and download it automatically if it is missing.
 ```bash
 ./gradlew :app:assembleDebug                 # build
 ./gradlew installDebug                       # install on device/emulator
-./gradlew testDebugUnitTest                  # JVM + Robolectric tests (all modules)
+./gradlew testDebugUnitTest :core:domain:test # JVM + Robolectric tests (all modules)
 ./gradlew spotlessApply                      # format (ktlint)
 ./gradlew spotlessCheck lint                 # static analysis
 ```

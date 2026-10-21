@@ -42,6 +42,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:domain"))
     implementation(project(":core:data"))
 
     implementation(libs.androidx.activity.compose)

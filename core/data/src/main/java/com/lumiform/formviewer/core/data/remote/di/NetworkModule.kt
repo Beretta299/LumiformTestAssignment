@@ -7,7 +7,7 @@ import com.lumiform.formviewer.core.data.remote.RetrofitFormRemoteDataSource
 import com.lumiform.formviewer.core.data.remote.RetryPolicy
 import com.lumiform.formviewer.core.data.remote.createFormApi
 import com.lumiform.formviewer.core.data.remote.security.ConnectionSecurityInterceptor
-import com.lumiform.formviewer.core.data.remote.security.ConnectionSecurityMonitor
+import com.lumiform.formviewer.core.domain.repository.ConnectionSecurityRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -59,5 +59,5 @@ internal abstract class RemoteBindingsModule {
     abstract fun bindFormRemoteDataSource(impl: RetrofitFormRemoteDataSource): FormRemoteDataSource
 
     @Binds
-    abstract fun bindConnectionSecurityMonitor(impl: ConnectionSecurityInterceptor): ConnectionSecurityMonitor
+    abstract fun bindConnectionSecurityRepository(impl: ConnectionSecurityInterceptor): ConnectionSecurityRepository
 }

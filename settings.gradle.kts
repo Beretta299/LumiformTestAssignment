@@ -24,3 +24,4 @@ rootProject.name = "LumiformFormViewer"
 
 include(":app")
 include(":core:data")
+include(":core:domain")

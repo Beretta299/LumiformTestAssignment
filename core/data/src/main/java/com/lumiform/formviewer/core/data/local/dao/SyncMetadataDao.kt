@@ -11,6 +11,9 @@ interface SyncMetadataDao {
     @Query("SELECT * FROM sync_metadata WHERE `key` = :key")
     fun observe(key: String): Flow<SyncMetadataEntity?>
 
+    @Query("SELECT * FROM sync_metadata WHERE `key` = :key")
+    suspend fun get(key: String): SyncMetadataEntity?
+
     @Upsert
     suspend fun upsert(metadata: SyncMetadataEntity)
 }

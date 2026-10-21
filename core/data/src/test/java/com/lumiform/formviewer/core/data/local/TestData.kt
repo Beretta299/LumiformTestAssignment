@@ -56,3 +56,19 @@ internal fun sampleSnapshot() =
                 ResponseEntity(1023, 102, 2, "Loading bay", null),
             ),
     )
+
+/** What `FormDao.observeForm` returns once [this] snapshot and [answers] are stored. */
+internal fun FormSnapshot.toStored(answers: List<AnswerEntity> = emptyList()): List<StoredFormItem> =
+    items.map { item ->
+        val responseSet = responseSets.firstOrNull { it.itemId == item.id }
+        StoredFormItem(
+            item,
+            responseSet?.let { set ->
+                StoredResponseSet(
+                    set,
+                    responses.filter { it.responseSetId == set.id },
+                    answers.filter { it.responseSetId == set.id },
+                )
+            },
+        )
+    }
