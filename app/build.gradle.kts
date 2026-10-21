@@ -37,7 +37,18 @@ android {
     }
 
     testOptions {
-        unitTests.all { it.useJUnitPlatform() }
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            // JUnit 5 platform runs Jupiter tests and, via the Vintage engine, JUnit 4 Robolectric tests.
+            it.useJUnitPlatform()
+            // Robolectric reaches into FileDescriptor internals, which JDK 17+ hides behind module boundaries.
+            it.jvmArgs(
+                "--add-exports",
+                "java.base/jdk.internal.access=ALL-UNNAMED",
+                "--add-opens",
+                "java.base/java.io=ALL-UNNAMED",
+            )
+        }
     }
 }
 
@@ -50,7 +61,20 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
+    implementation(libs.work.runtime)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
     testImplementation(platform(libs.junit5.bom))
     testImplementation(libs.junit5.jupiter)
+    testRuntimeOnly(libs.junit5.vintage.engine)
     testRuntimeOnly(libs.junit5.platform.launcher)
+    // Robolectric only supports JUnit 4 runners.
+    testImplementation(libs.junit4)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.work.testing)
 }

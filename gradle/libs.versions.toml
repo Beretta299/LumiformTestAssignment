@@ -9,6 +9,9 @@ coroutines = "1.11.0"
 # 1.11.0 until Android Studio's bundled Kotlin (2.3.20) understands 1.12's generated serializers.
 kotlinxSerialization = "1.11.0"
 javaxInject = "1"
+work = "2.12.0"
+androidxHilt = "1.4.0"
+coil = "3.6.3"
 retrofit = "3.0.0"
 okhttp = "5.5.0"
 junit4 = "4.13.2"
@@ -27,6 +30,15 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "androidxHilt" }
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "androidxHilt" }
+
+work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+work-testing = { module = "androidx.work:work-testing", version.ref = "work" }
+
+coil = { module = "io.coil-kt.coil3:coil", version.ref = "coil" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
