@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.FormViewer" parent="android:Theme.Material.NoActionBar" />
+</resources>

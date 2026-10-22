@@ -1,3 +1,41 @@
 <resources>
     <string name="app_name">Form Viewer</string>
+
+    <string name="form_loading">Loading the form</string>
+    <string name="form_untitled_page">Untitled page</string>
+    <string name="form_untitled_section">Untitled section</string>
+    <string name="form_page_number">Page %1$02d / %2$02d</string>
+    <string name="form_answered_label">Answered</string>
+    <string name="form_score_label">Score</string>
+    <string name="form_syncing">Syncing…</string>
+    <string name="form_score">Score %1$d</string>
+    <string name="form_points">+%1$d</string>
+    <string name="form_unsupported_item">Please update the app to the latest version to see this item.</string>
+    <string name="form_unsupported_update">Update</string>
+
+    <string name="form_refresh">Refresh</string>
+    <string name="form_synced_at">Updated %1$s</string>
+    <string name="form_never_synced">Not synced yet</string>
+    <string name="form_back_online">Back online</string>
+
+    <string name="form_offline_banner">Offline · saved %1$s</string>
+    <string name="form_offline_banner_undated">Offline · showing saved data</string>
+
+    <string name="form_empty_title">This form is empty</string>
+    <string name="form_empty_message">There\'s nothing to fill in yet. Pull down to check for updates.</string>
+
+    <string name="form_retry">Retry</string>
+    <string name="form_error_offline_title">You\'re offline</string>
+    <string name="form_error_offline_message">Connect to the internet to load the form.</string>
+    <string name="form_error_server_title">Something went wrong</string>
+    <string name="form_error_server_message">The server couldn\'t load the form. Try again in a moment.</string>
+    <string name="form_error_invalid_data_title">The form couldn\'t be read</string>
+    <string name="form_error_invalid_data_message">The server sent a form this app can\'t read. Try again later.</string>
+    <string name="form_error_insecure_title">Connection not secure</string>
+    <string name="form_error_insecure_message">The server\'s certificate couldn\'t be verified, so someone may be intercepting the connection. The form stays hidden until a secure connection is made.</string>
+
+    <string name="form_refresh_failed_offline">Couldn\'t refresh: you\'re offline.</string>
+    <string name="form_refresh_failed_server">Couldn\'t refresh: the server had a problem.</string>
+    <string name="form_refresh_failed_invalid_data">Couldn\'t refresh: the server sent a form this app can\'t read.</string>
+    <string name="form_refresh_failed_insecure">Couldn\'t refresh: the connection isn\'t secure.</string>
 </resources>

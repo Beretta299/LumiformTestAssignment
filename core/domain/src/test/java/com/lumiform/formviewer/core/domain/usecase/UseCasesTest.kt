@@ -12,6 +12,7 @@ import com.lumiform.formviewer.core.domain.model.SyncError
 import com.lumiform.formviewer.core.domain.model.SyncResult
 import com.lumiform.formviewer.core.domain.model.SyncState
 import com.lumiform.formviewer.core.domain.repository.ConnectionSecurityRepository
+import com.lumiform.formviewer.core.domain.repository.ConnectivityRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -144,6 +145,22 @@ class UseCasesTest {
                 assertEquals(false, awaitItem())
                 compromised.value = true
                 assertEquals(true, awaitItem())
+            }
+        }
+
+    @Test
+    fun observeConnectivity_emitsRepositoryValue() =
+        runTest {
+            val online = MutableStateFlow(true)
+            val connectivity =
+                object : ConnectivityRepository {
+                    override val isOnline = online
+                }
+
+            ObserveConnectivityUseCase(connectivity)().test {
+                assertEquals(true, awaitItem())
+                online.value = false
+                assertEquals(false, awaitItem())
             }
         }
 }
