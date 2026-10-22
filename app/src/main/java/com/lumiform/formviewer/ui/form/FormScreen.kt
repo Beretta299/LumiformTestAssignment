@@ -56,7 +56,10 @@ private const val ENTRANCE_STAGGER_MILLIS = 45L
 private const val ENTRANCE_WINDOW_MILLIS = 300L
 
 @Composable
-fun FormRoute(viewModel: FormViewModel = hiltViewModel()) {
+fun FormRoute(
+    onImageClick: (questionId: Long) -> Unit,
+    viewModel: FormViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     FormScreen(
         state = state,
@@ -65,6 +68,7 @@ fun FormRoute(viewModel: FormViewModel = hiltViewModel()) {
         onRefreshFailureShown = viewModel::onRefreshFailureShown,
         onResponseClick = viewModel::onResponseClick,
         onUpdateApp = rememberOpenStoreListing(),
+        onImageClick = onImageClick,
     )
 }
 
@@ -88,6 +92,7 @@ fun FormScreen(
     onResponseClick: (ChoiceQuestion, responseId: Long) -> Unit,
     modifier: Modifier = Modifier,
     onUpdateApp: (() -> Unit)? = null,
+    onImageClick: (questionId: Long) -> Unit = {},
     screenState: FormScreenState = rememberFormScreenState(state.isOffline),
 ) {
     val colors = FormTheme.colors
@@ -151,6 +156,7 @@ fun FormScreen(
                                 layout = layout,
                                 onResponseClick = onResponseClick,
                                 onUpdateApp = onUpdateApp,
+                                onImageClick = onImageClick,
                                 modifier = Modifier.nestedScroll(screenState.headerState.nestedScrollConnection),
                             )
                         }
@@ -181,6 +187,7 @@ private fun FormContent(
     layout: FormLayout,
     onResponseClick: (ChoiceQuestion, responseId: Long) -> Unit,
     onUpdateApp: (() -> Unit)?,
+    onImageClick: (questionId: Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(Unit) {
@@ -204,6 +211,7 @@ private fun FormContent(
                     layout = layout,
                     onResponseClick = onResponseClick,
                     onUpdateApp = onUpdateApp,
+                    onImageClick = onImageClick,
                     modifier = Modifier.animateItem().formContentWidth().entrance(index, playEntrance),
                 )
             }

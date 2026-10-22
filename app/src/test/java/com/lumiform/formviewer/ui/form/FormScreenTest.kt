@@ -15,6 +15,7 @@ import com.google.common.truth.Truth.assertThat
 import com.lumiform.formviewer.R
 import com.lumiform.formviewer.core.domain.model.ChoiceQuestion
 import com.lumiform.formviewer.core.domain.model.FormItem
+import com.lumiform.formviewer.core.domain.model.ImageQuestion
 import com.lumiform.formviewer.core.domain.model.Page
 import com.lumiform.formviewer.core.domain.model.Response
 import com.lumiform.formviewer.core.domain.model.ResponseSet
@@ -69,6 +70,7 @@ class FormScreenTest {
     private var updateAppCount = 0
     private var refreshFailureShownCount = 0
     private val clickedResponses = mutableListOf<Pair<Long, Long>>()
+    private val clickedImages = mutableListOf<Long>()
 
     private fun string(
         @StringRes id: Int,
@@ -90,6 +92,7 @@ class FormScreenTest {
                     onRefreshFailureShown = { refreshFailureShownCount++ },
                     onResponseClick = { question, responseId -> clickedResponses += question.id to responseId },
                     onUpdateApp = if (canUpdateApp) ({ updateAppCount++ }) else null,
+                    onImageClick = { clickedImages += it },
                 )
             }
         }
@@ -125,6 +128,34 @@ class FormScreenTest {
         composeRule.onNodeWithText("Yes").performClick()
 
         assertThat(clickedResponses).containsExactly(4L to 42L, 4L to 41L).inOrder()
+    }
+
+    @Test
+    fun image_tapOpensTheViewerForThatQuestion() {
+        val image =
+            listOf(
+                Page(
+                    id = 1,
+                    title = "Inspection",
+                    children = listOf(ImageQuestion(5, "https://example.invalid/a.png", "Fridge")),
+                ),
+            )
+        setScreen(FormUiState(form = content(image)))
+
+        composeRule.onNodeWithContentDescription("Fridge", substring = true).performClick()
+
+        assertThat(clickedImages).containsExactly(5L)
+    }
+
+    @Test
+    fun image_withoutASource_saysSo_andDoesNotOpen() {
+        val image = listOf(Page(id = 1, title = "Inspection", children = listOf(ImageQuestion(5, null, "Fridge"))))
+        setScreen(FormUiState(form = content(image)))
+
+        composeRule.onNodeWithText(string(R.string.form_image_missing)).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Fridge", substring = true).performClick()
+
+        assertThat(clickedImages).isEmpty()
     }
 
     @Test

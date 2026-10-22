@@ -17,6 +17,7 @@ internal class FakeFormRepository : FormRepository {
     val syncState = MutableStateFlow(SyncState(lastSyncedAt = null, lastError = null))
     val responseSets = mutableMapOf<Long, ResponseSet>()
     val selections = mutableMapOf<Long, Set<Long>>()
+    val imageQuestions = mutableMapOf<Long, ImageQuestion>()
     var syncResult: SyncResult = SyncResult.Success
 
     /** When set, `sync` suspends until it completes, so a test can observe a sync in flight. */
@@ -42,7 +43,7 @@ internal class FakeFormRepository : FormRepository {
         selections[responseSetId] = transform(responseSet, selections[responseSetId].orEmpty())
     }
 
-    override suspend fun getImageQuestion(id: Long): ImageQuestion? = null
+    override suspend fun getImageQuestion(id: Long): ImageQuestion? = imageQuestions[id]
 }
 
 internal class FakeConnectivityRepository : ConnectivityRepository {

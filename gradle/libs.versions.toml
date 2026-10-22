@@ -9,6 +9,7 @@ composeBom = "2026.09.00"
 # Beta for the Material 3 Expressive APIs (MaterialExpressiveTheme, MotionScheme.expressive, LoadingIndicator); 1.4.0 keeps them internal.
 material3 = "1.5.0-beta02"
 lifecycle = "2.11.0"
+navigation = "2.10.2"
 coroutines = "1.11.0"
 # 1.11.0 until Android Studio's bundled Kotlin (2.3.20) understands 1.12's generated serializers.
 kotlinxSerialization = "1.11.0"
@@ -34,6 +35,8 @@ ktlint = "1.8.0"
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
+androidx-navigation-testing = { module = "androidx.navigation:navigation-testing", version.ref = "navigation" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
