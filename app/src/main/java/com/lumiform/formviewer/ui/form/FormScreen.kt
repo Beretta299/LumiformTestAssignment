@@ -69,6 +69,7 @@ fun FormRoute(
         onResponseClick = viewModel::onResponseClick,
         onUpdateApp = rememberOpenStoreListing(),
         onImageClick = onImageClick,
+        onShowItemIdsChange = viewModel::onShowItemIdsChange,
     )
 }
 
@@ -93,6 +94,7 @@ fun FormScreen(
     modifier: Modifier = Modifier,
     onUpdateApp: (() -> Unit)? = null,
     onImageClick: (questionId: Long) -> Unit = {},
+    onShowItemIdsChange: (Boolean) -> Unit = {},
     screenState: FormScreenState = rememberFormScreenState(state.isOffline),
 ) {
     val colors = FormTheme.colors
@@ -114,7 +116,14 @@ fun FormScreen(
     Box(modifier.background(colors.paper)) {
         Scaffold(containerColor = colors.paper, snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
-                FormHeader(screenState.headerState, content?.summary, currentPage, status, onRefresh)
+                FormHeader(
+                    collapse = screenState.headerState,
+                    summary = content?.summary,
+                    currentPage = currentPage,
+                    status = status,
+                    onRefresh = onRefresh,
+                    onSettingsClick = { screenState.settingsOpen = true },
+                )
                 PullToRefreshBox(
                     isRefreshing = state.isRefreshing,
                     onRefresh = onRefresh,
@@ -157,12 +166,20 @@ fun FormScreen(
                                 onResponseClick = onResponseClick,
                                 onUpdateApp = onUpdateApp,
                                 onImageClick = onImageClick,
+                                showItemIds = state.showItemIds,
                                 modifier = Modifier.nestedScroll(screenState.headerState.nestedScrollConnection),
                             )
                         }
                     }
                 }
             }
+        }
+        if (screenState.settingsOpen) {
+            DisplaySettingsSheet(
+                showItemIds = state.showItemIds,
+                onShowItemIdsChange = onShowItemIdsChange,
+                onDismiss = { screenState.settingsOpen = false },
+            )
         }
         // Covers the whole screen: nothing loaded over a possibly intercepted connection is shown.
         if (state.isConnectionInsecure) {
@@ -188,6 +205,7 @@ private fun FormContent(
     onResponseClick: (ChoiceQuestion, responseId: Long) -> Unit,
     onUpdateApp: (() -> Unit)?,
     onImageClick: (questionId: Long) -> Unit,
+    showItemIds: Boolean,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(Unit) {
@@ -212,6 +230,7 @@ private fun FormContent(
                     onResponseClick = onResponseClick,
                     onUpdateApp = onUpdateApp,
                     onImageClick = onImageClick,
+                    showItemIds = showItemIds,
                     modifier = Modifier.animateItem().formContentWidth().entrance(index, playEntrance),
                 )
             }

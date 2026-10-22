@@ -2,6 +2,9 @@ package com.lumiform.formviewer.ui.form
 
 import android.app.Application
 import androidx.annotation.StringRes
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -71,6 +74,7 @@ class FormScreenTest {
     private var refreshFailureShownCount = 0
     private val clickedResponses = mutableListOf<Pair<Long, Long>>()
     private val clickedImages = mutableListOf<Long>()
+    private val showItemIdsChanges = mutableListOf<Boolean>()
 
     private fun string(
         @StringRes id: Int,
@@ -93,6 +97,7 @@ class FormScreenTest {
                     onResponseClick = { question, responseId -> clickedResponses += question.id to responseId },
                     onUpdateApp = if (canUpdateApp) ({ updateAppCount++ }) else null,
                     onImageClick = { clickedImages += it },
+                    onShowItemIdsChange = { showItemIdsChanges += it },
                 )
             }
         }
@@ -156,6 +161,35 @@ class FormScreenTest {
         composeRule.onNodeWithContentDescription("Fridge", substring = true).performClick()
 
         assertThat(clickedImages).isEmpty()
+    }
+
+    @Test
+    fun itemIds_areHiddenByDefault_andShownWhenTheSettingIsOn() {
+        var state by mutableStateOf(FormUiState(form = content()))
+        composeRule.setContent {
+            FormViewerTheme {
+                FormScreen(state, FormLayout.Compact, onRefresh = {}, onRefreshFailureShown = {}, onResponseClick = {
+                    _,
+                    _,
+                    ->
+                })
+            }
+        }
+        composeRule.onNodeWithText("#3").assertDoesNotExist()
+
+        state = state.copy(showItemIds = true)
+
+        listOf("#1", "#2", "#3", "#4").forEach { composeRule.onNodeWithText(it).assertIsDisplayed() }
+    }
+
+    @Test
+    fun settings_openFromTheHeader_andToggleItemIds() {
+        setScreen(FormUiState(form = content()))
+
+        composeRule.onNodeWithContentDescription(string(R.string.form_settings)).performClick()
+        composeRule.onNodeWithText(string(R.string.settings_show_item_ids)).assertIsDisplayed().performClick()
+
+        assertThat(showItemIdsChanges).containsExactly(true)
     }
 
     @Test

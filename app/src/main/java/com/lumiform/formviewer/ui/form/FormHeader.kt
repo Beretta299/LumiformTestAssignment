@@ -184,6 +184,7 @@ fun FormHeader(
     currentPage: PageRow?,
     status: SyncStatus,
     onRefresh: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = FormTheme.colors
@@ -216,6 +217,7 @@ fun FormHeader(
                 currentPage = currentPage,
                 status = status,
                 onRefresh = onRefresh,
+                onSettingsClick = onSettingsClick,
                 modifier =
                     Modifier
                         .graphicsLayer {
@@ -230,6 +232,7 @@ fun FormHeader(
                 title = currentPage?.title ?: stringResource(R.string.app_name),
                 status = status,
                 onRefresh = onRefresh,
+                onSettingsClick = onSettingsClick,
                 modifier =
                     Modifier
                         .graphicsLayer {
@@ -249,6 +252,7 @@ private fun ExpandedHeader(
     currentPage: PageRow?,
     status: SyncStatus,
     onRefresh: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = FormTheme.colors
@@ -264,6 +268,7 @@ private fun ExpandedHeader(
             // Takes the rest of the row and ellipsizes, so a long status never pushes the refresh button out.
             StatusLabel(status, Modifier.weight(1f))
             RefreshButton(status == SyncStatus.Syncing, onRefresh)
+            SettingsButton(onSettingsClick)
         }
         Spacer(Modifier.weight(1f))
         Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(end = 12.dp)) {
@@ -313,6 +318,7 @@ private fun CollapsedHeader(
     title: String,
     status: SyncStatus,
     onRefresh: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = FormTheme.colors
@@ -336,6 +342,7 @@ private fun CollapsedHeader(
             StatusLabel(status, Modifier.weight(1f, fill = false))
         }
         RefreshButton(status == SyncStatus.Syncing, onRefresh)
+        SettingsButton(onSettingsClick)
     }
 }
 
@@ -470,6 +477,17 @@ private fun PulsingDot(color: Color) {
             }.clip(CircleShape)
             .background(color),
     )
+}
+
+@Composable
+private fun SettingsButton(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(
+            painterResource(R.drawable.ic_tune),
+            contentDescription = stringResource(R.string.form_settings),
+            tint = FormTheme.colors.onHero,
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

@@ -4,6 +4,7 @@ kotlin = "2.4.21"
 ksp = "2.3.12"
 hilt = "2.60.1"
 room = "2.8.5"
+datastore = "1.2.1"
 activityCompose = "1.13.0"
 composeBom = "2026.09.00"
 # Beta for the Material 3 Expressive APIs (MaterialExpressiveTheme, MotionScheme.expressive, LoadingIndicator); 1.4.0 keeps them internal.
@@ -65,6 +66,8 @@ coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 
 javax-inject = { module = "javax.inject:javax.inject", version.ref = "javaxInject" }
 

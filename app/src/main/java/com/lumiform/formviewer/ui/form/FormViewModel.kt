@@ -9,7 +9,9 @@ import com.lumiform.formviewer.core.domain.model.SyncState
 import com.lumiform.formviewer.core.domain.usecase.ObserveConnectionSecurityUseCase
 import com.lumiform.formviewer.core.domain.usecase.ObserveConnectivityUseCase
 import com.lumiform.formviewer.core.domain.usecase.ObserveFormUseCase
+import com.lumiform.formviewer.core.domain.usecase.ObserveShowItemIdsUseCase
 import com.lumiform.formviewer.core.domain.usecase.ObserveSyncStateUseCase
+import com.lumiform.formviewer.core.domain.usecase.SetShowItemIdsUseCase
 import com.lumiform.formviewer.core.domain.usecase.SyncFormUseCase
 import com.lumiform.formviewer.core.domain.usecase.ToggleResponseUseCase
 import com.lumiform.formviewer.di.DefaultDispatcher
@@ -41,6 +43,8 @@ class FormViewModel
         observeSyncState: ObserveSyncStateUseCase,
         observeConnectivity: ObserveConnectivityUseCase,
         observeConnectionSecurity: ObserveConnectionSecurityUseCase,
+        observeShowItemIds: ObserveShowItemIdsUseCase,
+        private val setShowItemIds: SetShowItemIdsUseCase,
         private val syncForm: SyncFormUseCase,
         private val toggleResponse: ToggleResponseUseCase,
         @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
@@ -58,17 +62,18 @@ class FormViewModel
             combine(
                 form,
                 observeSyncState(),
-                observeConnectivity(),
-                observeConnectionSecurity(),
+                combine(observeConnectivity(), observeConnectionSecurity(), ::Connection),
+                observeShowItemIds(),
                 refreshState,
-            ) { flatForm, syncState, isOnline, isCompromised, refresh ->
+            ) { flatForm, syncState, connection, showItemIds, refresh ->
                 val formState = formState(flatForm, syncState)
                 FormUiState(
                     form = formState,
                     isRefreshing = refresh == Refresh.Running,
-                    isOffline = !isOnline,
-                    isConnectionInsecure = isCompromised,
+                    isOffline = !connection.isOnline,
+                    isConnectionInsecure = connection.isCompromised,
                     refreshFailure = (refresh as? Refresh.Failed)?.error?.takeIf { formState is FormState.Content },
+                    showItemIds = showItemIds,
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), FormUiState())
 
@@ -100,6 +105,15 @@ class FormViewModel
         ) {
             viewModelScope.launch { toggleResponse(question, responseId) }
         }
+
+        fun onShowItemIdsChange(show: Boolean) {
+            viewModelScope.launch { setShowItemIds(show) }
+        }
+
+        private data class Connection(
+            val isOnline: Boolean,
+            val isCompromised: Boolean,
+        )
 
         private sealed interface Refresh {
             data object Idle : Refresh

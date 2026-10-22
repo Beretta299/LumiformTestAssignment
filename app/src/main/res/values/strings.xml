@@ -26,6 +26,13 @@
     <string name="image_viewer_not_found">This image is no longer part of the form.</string>
 
     <string name="form_refresh">Refresh</string>
+    <string name="form_settings">Display settings</string>
+    <string name="form_item_id">#%1$d</string>
+    <string name="form_item_id_description">Item id %1$d</string>
+
+    <string name="settings_title">Display</string>
+    <string name="settings_show_item_ids">Show item ids</string>
+    <string name="settings_show_item_ids_hint">Shows each item\'s id from the source data, to check the structure against it.</string>
     <string name="form_synced_at">Updated %1$s</string>
     <string name="form_never_synced">Not synced yet</string>
     <string name="form_back_online">Back online</string>

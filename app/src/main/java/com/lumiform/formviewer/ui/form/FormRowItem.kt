@@ -90,18 +90,19 @@ fun FormRowItem(
     modifier: Modifier = Modifier,
     onUpdateApp: (() -> Unit)? = null,
     onImageClick: (questionId: Long) -> Unit = {},
+    showItemIds: Boolean = false,
 ) {
     val padded = modifier.padding(horizontal = layout.horizontalPadding)
     when (row) {
         is PageRow -> {
-            PageHeader(row, padded)
+            PageHeader(row, showItemIds, padded)
         }
 
         is SectionRow -> {
             if (rail.onRail) {
-                RailRow(rail, RailNode.None, layout, row.depth, padded) { SectionTitle(row) }
+                RailRow(rail, RailNode.None, layout, row.depth, padded) { SectionTitle(row, showItemIds) }
             } else {
-                SectionTitle(row, padded.padding(top = 8.dp, bottom = if (rail.last) GroupGap else 16.dp))
+                SectionTitle(row, showItemIds, padded.padding(top = 8.dp, bottom = if (rail.last) GroupGap else 16.dp))
             }
         }
 
@@ -118,7 +119,7 @@ fun FormRowItem(
                 layout,
                 row.depth,
                 padded,
-            ) { QuestionContent(row, layout, onResponseClick, onImageClick) }
+            ) { QuestionContent(row, layout, showItemIds, onResponseClick, onImageClick) }
         }
 
         is UnsupportedRow -> {
@@ -128,7 +129,7 @@ fun FormRowItem(
                 layout,
                 row.depth,
                 padded,
-            ) { UnsupportedItem(onUpdateApp.takeIf { row.isTopLevel }) }
+            ) { UnsupportedItem(row.id.takeIf { showItemIds }, onUpdateApp.takeIf { row.isTopLevel }) }
         }
     }
 }
@@ -136,6 +137,7 @@ fun FormRowItem(
 @Composable
 private fun PageHeader(
     row: PageRow,
+    showItemIds: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.padding(top = 28.dp, bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -146,23 +148,34 @@ private fun PageHeader(
                 color = FormTheme.colors.signalText,
             )
         }
-        Text(
-            row.title ?: stringResource(R.string.form_untitled_page),
-            style = HierarchyTypography.page,
-            color = FormTheme.colors.text,
-        )
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                row.title ?: stringResource(R.string.form_untitled_page),
+                style = HierarchyTypography.page,
+                color = FormTheme.colors.text,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (showItemIds) ItemId(row.id, Modifier.padding(bottom = 6.dp))
+        }
     }
 }
 
 @Composable
 private fun SectionTitle(
     row: SectionRow,
+    showItemIds: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val style = HierarchyTypography.section(row.depth)
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(row.number, style = style, color = FormTheme.colors.signalText)
-        Text(row.title ?: stringResource(R.string.form_untitled_section), style = style, color = FormTheme.colors.text)
+        Text(
+            row.title ?: stringResource(R.string.form_untitled_section),
+            style = style,
+            color = FormTheme.colors.text,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        if (showItemIds) ItemId(row.id)
     }
 }
 
@@ -170,6 +183,7 @@ private fun SectionTitle(
 private fun QuestionContent(
     row: QuestionRow,
     layout: FormLayout,
+    showItemIds: Boolean,
     onResponseClick: (ChoiceQuestion, responseId: Long) -> Unit,
     onImageClick: (questionId: Long) -> Unit,
 ) {
@@ -189,7 +203,15 @@ private fun QuestionContent(
                 color = colors.muted,
                 modifier = Modifier.padding(top = 3.dp),
             )
-            label?.let { Text(it, style = HierarchyTypography.question, color = colors.text) }
+            label?.let {
+                Text(
+                    it,
+                    style = HierarchyTypography.question,
+                    color = colors.text,
+                    modifier = Modifier.weight(1f, false),
+                )
+            }
+            if (showItemIds) ItemId(question.id, Modifier.padding(top = 3.dp))
         }
         when (question) {
             is TextQuestion -> Unit
@@ -271,7 +293,10 @@ internal fun thumbnailMemoryCacheKey(src: String) = "thumbnail:$src"
 
 /** A top-level item stands in for a whole page, so it also offers [onUpdateApp] (null hides the action). */
 @Composable
-private fun UnsupportedItem(onUpdateApp: (() -> Unit)?) {
+private fun UnsupportedItem(
+    itemId: Long?,
+    onUpdateApp: (() -> Unit)?,
+) {
     val colors = FormTheme.colors
     Column(
         Modifier
@@ -287,7 +312,9 @@ private fun UnsupportedItem(onUpdateApp: (() -> Unit)?) {
                 stringResource(R.string.form_unsupported_item),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.text,
+                modifier = Modifier.weight(1f),
             )
+            itemId?.let { ItemId(it) }
         }
         if (onUpdateApp != null) {
             TextButton(onClick = onUpdateApp, modifier = Modifier.align(Alignment.End)) {
@@ -295,6 +322,21 @@ private fun UnsupportedItem(onUpdateApp: (() -> Unit)?) {
             }
         }
     }
+}
+
+/** The item's raw id from the payload, shown only when the display setting is on. */
+@Composable
+private fun ItemId(
+    id: Long,
+    modifier: Modifier = Modifier,
+) {
+    val description = stringResource(R.string.form_item_id_description, id)
+    Text(
+        stringResource(R.string.form_item_id, id),
+        style = HierarchyTypography.number,
+        color = FormTheme.colors.muted,
+        modifier = modifier.semantics { contentDescription = description },
+    )
 }
 
 private enum class RailNode { None, Dot, Open, Done }

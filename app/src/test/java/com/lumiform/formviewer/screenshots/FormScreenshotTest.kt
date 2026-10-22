@@ -88,6 +88,9 @@ class FormScreenshotTest {
         capture("form_phone_choices_dark", darkTheme = true, scrollTo = "Which areas were inspected?")
 
     @Test
+    fun phone_itemIds() = capture("form_phone_item_ids", FormUiState(form = sampleContent(), showItemIds = true))
+
+    @Test
     fun phone_dark() = capture("form_phone_dark", darkTheme = true)
 
     @Test
