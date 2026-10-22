@@ -1,0 +1,4 @@
+<resources>
+    <!-- Only the window behind Compose: no action bar, and a background that matches the theme while it starts. -->
+    <style name="Theme.FormViewer" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

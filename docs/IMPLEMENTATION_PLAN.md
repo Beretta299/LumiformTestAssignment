@@ -1,6 +1,6 @@
 # Implementation Plan — Lumiform Android Code Challenge
 
-Status: **v5. Milestones 1–6 (setup, network, domain, database, repository, background sync) are implemented; 6 awaits review.**
+Status: **v6. Milestones 1–8 (setup, network, domain, database, repository, background sync, form screen, choice questions) are implemented; 7–8 await review.**
 
 ### Decisions recorded after v2
 
@@ -533,11 +533,63 @@ Order changed: domain now comes after network and database.
      singleton via `SingletonImageLoader.Factory`, or inject it); Coil's default loader would cache
      in `cacheDir` and bypass the shared client's security interceptor.
    - Versions: WorkManager 2.12.0, androidx.hilt 1.4.0, Coil 3.6.3.
-7. **Form screen:** ViewModel, flattened LazyColumn, hierarchy typography, accent lines, states,
-   pull-to-refresh, offline banner, unsupported-item cards, adaptive layout.
-   *Tests:* ViewModel and Compose UI.
-8. **Choice questions:** chips with score badge, single/multi via use case, persisted.
-   *Tests:* UI taps.
+7. ✅ **Form screen:** ViewModel, flattened LazyColumn, hierarchy typography, timeline rail, states,
+   pull-to-refresh, offline status, unsupported-item cards, adaptive layout.
+   *Tests:* 13 ViewModel tests, 4 row/summary tests, 4 screen-state tests, 11 Compose UI tests (Robolectric),
+   2 connectivity tests, 1 use case test.
+   Decisions:
+   - **One `FormUiState`** with a sealed `FormState` (Loading, Empty, Error, Content) plus flags for
+     refreshing, offline, an insecure connection and a one-off refresh failure. A stored form always wins:
+     a failed sync is a full-screen error only while nothing is stored, otherwise a snackbar.
+   - **The launch sync is left to the background work.** The screen calls `SyncFormUseCase` only for
+     pull-to-refresh and Retry, plus one case: a first launch offline with nothing stored, where the work
+     would wait for a network and leave the screen loading instead of offering Retry.
+   - **Connectivity is a domain `ConnectivityRepository`**, backed by the default-network callback. Online
+     means *validated*, as JobScheduler requires for WorkManager's `CONNECTED`; with plain `INTERNET` a
+     captive-portal network kept the launch work waiting while the screen thought it was online. It drives
+     the header's offline status ("Offline · saved 5 minutes ago") and the first-launch rule.
+   - **Rows are flattened in `:app`** (`toRows()`, pure) on `Dispatchers.Default` via an injected
+     dispatcher, in a flow shared by the screen state and the launch check. Pages don't add depth; sections
+     and unknown containers do. Rows carry ids as LazyColumn keys and a `contentType` per kind.
+   - **Indentation:** nested rows indent 16 dp per level beside the rail, capped at 3 levels on compact widths
+     and 6 from the medium width class, where content is also centred at 720 dp.
+   - **State hoisting:** `FormScreen` is stateless apart from purely visual animation state. Scroll position,
+     header collapse, pull-to-refresh, snackbars, the played entrance and the brief "back online" notice live in
+     a `FormScreenState` holder (`rememberFormScreenState()`, saved across rotation); the store link comes in as
+     an `onUpdateApp` callback.
+   - **Insecure connection** is a full-screen, non-dismissable blocker over everything, with Retry.
+   - **Thumbnails go through the Hilt `ImageLoader`**: the application implements
+     `SingletonImageLoader.Factory`. Placeholder, error and tap-to-open come with milestone 9.
+   - A platform `NoActionBar` window theme (light/night) removes the default action bar and the start-up
+     flash; colours come from the Compose theme.
+   - Espresso is pinned to 3.7.0: Compose's ui-test pulls 3.5, which calls an `InputManager` method newer
+     SDKs removed, so every Robolectric click failed.
+   **UI direction "Field" (chosen after two rounds of mockups; stock Material looked like a component demo).**
+   - Own design language on top of Material 3 Expressive: an ink-on-paper palette with one signal colour
+     (`FormColors`, mapped onto a Material scheme only for the stock components still used), bundled variable
+     fonts (Space Grotesk for headings and numbers, Inter for text; SIL OFL, licences in `assets/licenses`).
+     References: Typeform (one calm focus), Jetsnack (own colour system in Compose), segmented controls with a
+     sliding thumb, Lumiform/SafetyCulture numbering and scores, Linear/Things palettes.
+   - Material3 is pinned to `1.5.0-beta02` for `MaterialExpressiveTheme`, `MotionScheme.expressive()` (every spring)
+     and `LoadingIndicator`; `1.4.0` keeps them internal. Accepted for a test assignment.
+   - **Header:** an ink card with answered count, a rolling score and one progress segment per choice question,
+     plus sync status (offline with a pulsing dot, "back online", last update) and refresh. A custom nested-scroll
+     connection collapses it into a slim bar with the current page's title; it sits between the list and
+     pull-to-refresh, so a pull at the top expands the header before refreshing. Only the visible layout of the
+     two is composed for touch and accessibility.
+   - **Rows:** outline numbers per page ("2", "2.1"); each page child's subtree hangs on a timeline rail whose node
+     fills with a spring once its choice question is answered. A group's root section is its heading, off the rail.
+   - Rows on screen at first load rise in with a stagger (read once per row, saved across rotation);
+     `animateItem()` animates rows a sync adds or removes.
+8. ✅ **Choice questions:** sliding selector and check tiles with points, single/multi via use case, persisted.
+   *Tests:* UI taps (selection shown, tap reports question + response), ViewModel → use case → repository.
+   - Single select is a track with one thumb that springs to the chosen answer (measured option bounds, drawn
+     behind the options); short answers (≤ 4, ≤ 10 characters, like Yes / No / N/A) sit side by side. Multi select
+     is a grid of tiles that pop a check. Points show as "+2" and light up once they count. Taps tick haptically.
+   - Images are full width with the title as the question line above.
+   - The selection comes only from Room; a tap goes to `ToggleResponseUseCase`.
+   - Options have the radio-button role inside a `selectableGroup`, tiles the checkbox role.
+   - Points show only when `score` is set, with a "Score N" content description.
 9. **Image viewer:** thumbnail with placeholder/error, shared-element nav, zoom/pan, double-tap,
    pinch-out and swipe-down dismiss. *Tests:* nav and gesture UI tests.
 10. **Screenshots and accessibility:** Roborazzi matrix, ATF checks, fixes.
