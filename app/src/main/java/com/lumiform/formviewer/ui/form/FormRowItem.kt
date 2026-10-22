@@ -113,23 +113,15 @@ fun FormRowItem(
                     is ChoiceQuestion -> if (question.selectedResponseIds.isEmpty()) RailNode.Open else RailNode.Done
                     else -> RailNode.Dot
                 }
-            RailRow(
-                rail,
-                node,
-                layout,
-                row.depth,
-                padded,
-            ) { QuestionContent(row, layout, showItemIds, onResponseClick, onImageClick) }
+            RailRow(rail, node, layout, row.depth, padded) {
+                QuestionContent(row, layout, showItemIds, onResponseClick, onImageClick)
+            }
         }
 
         is UnsupportedRow -> {
-            RailRow(
-                rail,
-                RailNode.Dot,
-                layout,
-                row.depth,
-                padded,
-            ) { UnsupportedItem(row.id.takeIf { showItemIds }, onUpdateApp.takeIf { row.isTopLevel }) }
+            RailRow(rail, RailNode.Dot, layout, row.depth, padded) {
+                UnsupportedItem(row.id.takeIf { showItemIds }, onUpdateApp.takeIf { row.isTopLevel })
+            }
         }
     }
 }

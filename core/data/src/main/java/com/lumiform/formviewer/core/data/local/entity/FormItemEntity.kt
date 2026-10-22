@@ -27,12 +27,7 @@ import androidx.room.PrimaryKey
 data class FormItemEntity(
     @PrimaryKey val id: Long,
     @ColumnInfo(name = "parent_id") val parentId: Long?,
-    /**
-     * Index of this item in its parent's array in the payload.
-     * Open question: it's not yet clear whether the app must keep the server's order or will only rely on
-     * user-chosen sorting later. Kept anyway, since SQL tables have no inherent row order and the server
-     * order would otherwise be lost.
-     */
+    /** Position among its siblings in the payload; SQL rows have no order of their own. */
     @ColumnInfo(name = "sort_index") val sortIndex: Int,
     val type: String,
     val title: String?,

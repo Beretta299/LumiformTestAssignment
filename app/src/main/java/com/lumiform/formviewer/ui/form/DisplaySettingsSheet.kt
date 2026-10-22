@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.lumiform.formviewer.R
 import com.lumiform.formviewer.ui.theme.FormTheme
 
-/** Display preferences for the form; for now only whether raw item ids are shown. */
+/** Display preferences for the form. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DisplaySettingsSheet(

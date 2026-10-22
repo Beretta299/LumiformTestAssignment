@@ -13,7 +13,7 @@ interface FormRepository {
 
     fun observeSyncState(): Flow<SyncState>
 
-    /** Replaces the stored form with the server's, keeping selections that still apply. Never throws for I/O. */
+    /** Merges the server's form into the stored one, keeping selections that still apply. Never throws for I/O. */
     suspend fun sync(): SyncResult
 
     /**

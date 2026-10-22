@@ -19,13 +19,17 @@ internal class FormDaoTest {
     private val formDao get() = databaseRule.database.formDao()
     private val answerDao get() = databaseRule.database.answerDao()
 
-    private suspend fun items() = formDao.observeItems().first()
+    private suspend fun items() = formDao.observeForm().first().map { it.item }
 
-    private suspend fun responseSets() = formDao.observeResponseSets().first()
+    private suspend fun responseSets() = formDao.observeForm().first().mapNotNull { it.responseSet?.responseSet }
 
-    private suspend fun responses() = formDao.observeResponses().first()
+    private suspend fun responses() = formDao.observeForm().first().flatMap { it.responseSet?.responses.orEmpty() }
 
-    private suspend fun answeredResponseIds() = answerDao.observeAnswers().first().map { it.responseId }
+    // Straight from the table, so an answer left behind by a broken merge can't hide behind a missing relation.
+    private fun answeredResponseIds(): List<Long> =
+        databaseRule.database.openHelper.readableDatabase.query("SELECT response_id FROM answer").use { cursor ->
+            generateSequence { if (cursor.moveToNext()) cursor.getLong(0) else null }.toList()
+        }
 
     @Test
     fun mergeIntoEmptyDatabase_storesWholeForm() =
@@ -38,7 +42,7 @@ internal class FormDaoTest {
         }
 
     @Test
-    fun observeItems_ordersTopLevelFirstThenByParentAndPosition() =
+    fun observeForm_ordersTopLevelFirstThenByParentAndPosition() =
         runTest {
             formDao.mergeForm(sampleSnapshot())
 

@@ -24,10 +24,11 @@ private fun variableFamily(
 )
 
 /** Space Grotesk for headings and numbers. */
-val DisplayFamily = variableFamily(R.font.space_grotesk, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold)
+private val DisplayFamily =
+    variableFamily(R.font.space_grotesk, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold)
 
 /** Inter for reading text and controls. */
-val BodyFamily = variableFamily(R.font.inter, FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold)
+private val BodyFamily = variableFamily(R.font.inter, FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold)
 
 private fun display(
     size: Int,

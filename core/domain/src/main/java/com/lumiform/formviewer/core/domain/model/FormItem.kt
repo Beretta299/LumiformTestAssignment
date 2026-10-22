@@ -50,3 +50,7 @@ data class Unsupported(
     val rawType: String,
     override val children: List<FormItem>,
 ) : FormContainer
+
+/** This item followed by everything nested under it, depth first. */
+fun FormItem.selfAndDescendants(): List<FormItem> =
+    listOf(this) + (this as? FormContainer)?.children?.flatMap { it.selfAndDescendants() }.orEmpty()
