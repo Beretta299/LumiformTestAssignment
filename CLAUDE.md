@@ -9,7 +9,7 @@ definition (JSON) and renders it as a structured, readable screen, with offline 
 by a relational database.
 
 - Original brief: `Android Code Challenge(Initial task).pdf` (repo root)
-- Implementation plan & open questions: `docs/IMPLEMENTATION_PLAN.md`
+- Design decisions: `docs/DECISIONS.md` (keep it up to date when a decision changes)
 - Data endpoint:
   `https://gist.githubusercontent.com/aruana-lumiform/383e1291df3e0cc1d49aeb14d45f5b94/raw/lumiform-android-test.json`
 
@@ -69,8 +69,7 @@ must be modelled as such.
 
 Confirmed product decisions: selections persisted in Room (SSOT); single-select can be cleared by
 re-tapping; unknown item types render an "update the app" card (never crash); all pages in one
-LazyColumn; fetch on launch + pull-to-refresh + retry. Still-open items are listed in
-`docs/IMPLEMENTATION_PLAN.md` → "Pending decisions".
+LazyColumn; fetch on launch + pull-to-refresh + retry; item ids hidden behind a "Show item ids" setting.
 
 ## Architecture rules
 

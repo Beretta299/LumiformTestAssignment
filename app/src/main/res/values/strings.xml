@@ -35,6 +35,7 @@
     <string name="settings_show_item_ids_hint">Shows each item\'s id from the source data, to check the structure against it.</string>
     <string name="form_synced_at">Updated %1$s</string>
     <string name="form_never_synced">Not synced yet</string>
+    <string name="form_just_now">just now</string>
     <string name="form_back_online">Back online</string>
 
     <string name="form_offline_banner">Offline · saved %1$s</string>

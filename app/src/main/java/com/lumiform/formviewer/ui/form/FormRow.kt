@@ -8,6 +8,7 @@ import com.lumiform.formviewer.core.domain.model.Question
 import com.lumiform.formviewer.core.domain.model.Score
 import com.lumiform.formviewer.core.domain.model.Section
 import com.lumiform.formviewer.core.domain.model.Unsupported
+import com.lumiform.formviewer.core.domain.model.selfAndDescendants
 
 /**
  * One LazyColumn item of the flattened form tree. [depth] counts the sections (and unknown containers) above a row;
@@ -128,6 +129,3 @@ private fun FormContainer.childRows(
         val number = if (prefix.isEmpty()) "${index + 1}" else "$prefix.${index + 1}"
         child.toRows(depth, group, number, isTopLevel = false)
     }
-
-private fun FormItem.selfAndDescendants(): List<FormItem> =
-    listOf(this) + (this as? FormContainer)?.children?.flatMap { it.selfAndDescendants() }.orEmpty()

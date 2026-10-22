@@ -113,8 +113,7 @@ stable keys and content types, instead of nested composables, so long forms stay
 | WorkManager handles the launch sync | An app started offline syncs as soon as the network returns, with no connectivity callback of our own | — |
 | Own visual language ("Field") on Material 3 Expressive | Stock Material looked like a component demo; one accent colour and bundled fonts give a calm, form-focused look | Material 3 is on `1.5.0-beta02` for the Expressive APIs |
 
-The full reasoning, including questions answered along the way, is in
-[`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
+The full list of decisions, with the reasoning behind each, is in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 ### Assumptions about the data
 

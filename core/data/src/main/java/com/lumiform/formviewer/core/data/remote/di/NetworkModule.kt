@@ -26,7 +26,7 @@ internal object NetworkModule {
     private const val HTTP_CACHE_DIR = "http_cache"
     private const val HTTP_CACHE_SIZE_BYTES = 10L * 1024 * 1024
 
-    /** Shared app-wide, so images will reuse its connection pool, cache and security interceptor. */
+    /** Shared app-wide, so images reuse its connection pool and security interceptor. */
     @Provides
     @Singleton
     fun provideOkHttpClient(

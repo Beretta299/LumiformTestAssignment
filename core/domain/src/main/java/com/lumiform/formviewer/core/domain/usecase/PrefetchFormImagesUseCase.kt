@@ -1,8 +1,7 @@
 package com.lumiform.formviewer.core.domain.usecase
 
-import com.lumiform.formviewer.core.domain.model.FormContainer
-import com.lumiform.formviewer.core.domain.model.FormItem
 import com.lumiform.formviewer.core.domain.model.ImageQuestion
+import com.lumiform.formviewer.core.domain.model.selfAndDescendants
 import com.lumiform.formviewer.core.domain.repository.FormRepository
 import com.lumiform.formviewer.core.domain.repository.ImageRepository
 import kotlinx.coroutines.flow.first
@@ -27,6 +26,3 @@ class PrefetchFormImagesUseCase
             return urls.isEmpty() || imageRepository.prefetch(urls)
         }
     }
-
-private fun FormItem.selfAndDescendants(): List<FormItem> =
-    listOf(this) + (this as? FormContainer)?.children?.flatMap { it.selfAndDescendants() }.orEmpty()

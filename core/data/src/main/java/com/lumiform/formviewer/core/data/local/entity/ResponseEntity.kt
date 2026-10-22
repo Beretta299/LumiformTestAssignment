@@ -21,12 +21,7 @@ import androidx.room.PrimaryKey
 data class ResponseEntity(
     @PrimaryKey val id: Long,
     @ColumnInfo(name = "response_set_id") val responseSetId: Long,
-    /**
-     * Index of this response in its parent's array in the payload.
-     * Open question: it's not yet clear whether the app must keep the server's order or will only rely on
-     * user-chosen sorting later. Kept anyway, since SQL tables have no inherent row order and the server
-     * order would otherwise be lost.
-     */
+    /** Position in its response set in the payload; SQL rows have no order of their own. */
     @ColumnInfo(name = "sort_index") val sortIndex: Int,
     val label: String,
     val score: Int?,

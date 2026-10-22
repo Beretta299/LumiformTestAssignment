@@ -378,13 +378,7 @@ private fun ProgressSegments(
 ) {
     val colors = FormTheme.colors
     val segments =
-        if (summary.total in
-            1..MAX_SEGMENTS
-        ) {
-            summary.answered.map { if (it) 1f else 0f }
-        } else {
-            listOf(summary.fraction)
-        }
+        if (summary.total in 1..MAX_SEGMENTS) summary.answered.map { if (it) 1f else 0f } else listOf(summary.fraction)
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         segments.forEach { target ->
             val fill by animateFloatAsState(target, MaterialTheme.motionScheme.slowSpatialSpec())
@@ -517,6 +511,14 @@ private fun rememberCurrentTimeMillis(): State<Long> =
         }
     }
 
-// A sync that finished after `now` was last refreshed would read "in 0 minutes"; it happened, so cap it at now.
-private fun Instant.relativeTo(nowMillis: Long): CharSequence =
-    DateUtils.getRelativeTimeSpanString(minOf(toEpochMilliseconds(), nowMillis), nowMillis, DateUtils.MINUTE_IN_MILLIS)
+/** "5 minutes ago"; under a minute reads "just now" rather than DateUtils' "0 minutes ago". */
+@Composable
+private fun Instant.relativeTo(nowMillis: Long): CharSequence {
+    // A sync that finished after `now` was last refreshed still happened, so it counts as now.
+    val millis = minOf(toEpochMilliseconds(), nowMillis)
+    return if (nowMillis - millis < MINUTE_MILLIS) {
+        stringResource(R.string.form_just_now)
+    } else {
+        DateUtils.getRelativeTimeSpanString(millis, nowMillis, DateUtils.MINUTE_IN_MILLIS)
+    }
+}

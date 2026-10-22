@@ -41,12 +41,8 @@ internal class AndroidConnectivityRepository
                         }
                     }
                 // Without a default network no callback fires, so the current state is sent first.
-                trySend(
-                    connectivityManager.activeNetwork
-                        ?.let(
-                            connectivityManager::getNetworkCapabilities,
-                        ).isValidatedInternet(),
-                )
+                val current = connectivityManager.activeNetwork?.let(connectivityManager::getNetworkCapabilities)
+                trySend(current.isValidatedInternet())
                 connectivityManager.registerDefaultNetworkCallback(callback)
                 awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
             }.distinctUntilChanged().conflate()

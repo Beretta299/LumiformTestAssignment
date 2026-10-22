@@ -14,18 +14,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 abstract class FormDao {
-    @Query("SELECT * FROM form_item ORDER BY parent_id, sort_index")
-    abstract fun observeItems(): Flow<List<FormItemEntity>>
-
     @Transaction
     @Query("SELECT * FROM form_item ORDER BY parent_id, sort_index")
     abstract fun observeForm(): Flow<List<StoredFormItem>>
-
-    @Query("SELECT * FROM response_set")
-    abstract fun observeResponseSets(): Flow<List<ResponseSetEntity>>
-
-    @Query("SELECT * FROM response ORDER BY response_set_id, sort_index")
-    abstract fun observeResponses(): Flow<List<ResponseEntity>>
 
     @Query("SELECT * FROM form_item WHERE id = :id")
     abstract suspend fun getItem(id: Long): FormItemEntity?

@@ -265,11 +265,7 @@ private fun LoadingState() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         LoadingIndicator(
             color = FormTheme.colors.signal,
-            modifier =
-                Modifier.size(72.dp).semantics {
-                    contentDescription =
-                        description
-                },
+            modifier = Modifier.size(72.dp).semantics { contentDescription = description },
         )
     }
 }
