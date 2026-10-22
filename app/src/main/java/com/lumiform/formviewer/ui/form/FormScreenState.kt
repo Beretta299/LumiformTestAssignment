@@ -32,10 +32,14 @@ class FormScreenState(
     val pullToRefreshState: PullToRefreshState,
     val snackbarHostState: SnackbarHostState,
     entrancePlayed: MutableState<Boolean>,
+    settingsOpen: MutableState<Boolean>,
     wasOffline: Boolean,
 ) {
     /** Rows on screen when the form first appears rise in once; afterwards rows just appear. */
     var entrancePlayed by entrancePlayed
+
+    /** The display settings sheet; kept across rotation. */
+    var settingsOpen by settingsOpen
 
     private var wasOffline by mutableStateOf(wasOffline)
     private var showBackOnline by mutableStateOf(false)
@@ -76,7 +80,16 @@ fun rememberFormScreenState(isOffline: Boolean = false): FormScreenState {
     val headerState = rememberCollapsingHeaderState()
     val pullToRefreshState = rememberPullToRefreshState()
     val entrancePlayed = rememberSaveable { mutableStateOf(false) }
+    val settingsOpen = rememberSaveable { mutableStateOf(false) }
     return remember(listState, headerState, pullToRefreshState) {
-        FormScreenState(listState, headerState, pullToRefreshState, SnackbarHostState(), entrancePlayed, isOffline)
+        FormScreenState(
+            listState,
+            headerState,
+            pullToRefreshState,
+            SnackbarHostState(),
+            entrancePlayed,
+            settingsOpen,
+            isOffline,
+        )
     }
 }

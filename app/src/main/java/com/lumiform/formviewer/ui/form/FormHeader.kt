@@ -62,6 +62,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -128,9 +129,32 @@ class CollapsingHeaderState(
     }
 }
 
+private data class HeaderHeights(
+    val expanded: Dp,
+    val collapsed: Dp,
+)
+
+/**
+ * Fixed heights would clip the text at large font sizes, so each height grows by what its lines of text grow. Per
+ * line, because Android scales fonts non-linearly: at 200 % small labels double while large numbers barely grow.
+ */
+@Composable
+private fun headerHeights(): HeaderHeights {
+    val type = MaterialTheme.typography
+    val density = LocalDensity.current
+
+    fun TextStyle.growth(): Dp = with(density) { lineHeight.toDp() } - lineHeight.value.dp
+    return HeaderHeights(
+        expanded =
+            ExpandedHeight + type.labelLarge.growth() + type.labelMedium.growth() * 2 + type.displaySmall.growth(),
+        collapsed = CollapsedHeight + type.titleMedium.growth(),
+    )
+}
+
 @Composable
 fun rememberCollapsingHeaderState(): CollapsingHeaderState {
-    val range = with(LocalDensity.current) { (ExpandedHeight - CollapsedHeight).toPx() }
+    val heights = headerHeights()
+    val range = with(LocalDensity.current) { (heights.expanded - heights.collapsed).toPx() }
     return rememberSaveable(range, saver = CollapsingHeaderState.saver(range)) { CollapsingHeaderState(range) }
 }
 
@@ -160,6 +184,7 @@ fun FormHeader(
     currentPage: PageRow?,
     status: SyncStatus,
     onRefresh: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = FormTheme.colors
@@ -171,13 +196,14 @@ fun FormHeader(
     val showExpanded by remember(collapse, hasForm) { derivedStateOf { hasForm && fraction() < EXPANDED_FADE_END } }
     val showCollapsed by remember(collapse, hasForm) { derivedStateOf { fraction() > COLLAPSED_FADE_START } }
     val collapsedInFront by remember(collapse, hasForm) { derivedStateOf { fraction() >= CROSSOVER } }
+    val heights = headerHeights()
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .layout { measurable, constraints ->
-                    val height = lerp(ExpandedHeight, CollapsedHeight, fraction()).roundToPx()
+                    val height = lerp(heights.expanded, heights.collapsed, fraction()).roundToPx()
                     val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
                     layout(placeable.width, height) { placeable.place(0, 0) }
                 }.graphicsLayer {
@@ -191,6 +217,7 @@ fun FormHeader(
                 currentPage = currentPage,
                 status = status,
                 onRefresh = onRefresh,
+                onSettingsClick = onSettingsClick,
                 modifier =
                     Modifier
                         .graphicsLayer {
@@ -205,6 +232,7 @@ fun FormHeader(
                 title = currentPage?.title ?: stringResource(R.string.app_name),
                 status = status,
                 onRefresh = onRefresh,
+                onSettingsClick = onSettingsClick,
                 modifier =
                     Modifier
                         .graphicsLayer {
@@ -224,15 +252,23 @@ private fun ExpandedHeader(
     currentPage: PageRow?,
     status: SyncStatus,
     onRefresh: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = FormTheme.colors
     Column(modifier.fillMaxSize().padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.labelLarge, color = colors.onHero)
-            Spacer(Modifier.weight(1f))
-            StatusLabel(status)
+            Text(
+                stringResource(R.string.app_name),
+                style = MaterialTheme.typography.labelLarge,
+                color = colors.onHero,
+                maxLines = 1,
+                modifier = Modifier.padding(end = 12.dp),
+            )
+            // Takes the rest of the row and ellipsizes, so a long status never pushes the refresh button out.
+            StatusLabel(status, Modifier.weight(1f))
             RefreshButton(status == SyncStatus.Syncing, onRefresh)
+            SettingsButton(onSettingsClick)
         }
         Spacer(Modifier.weight(1f))
         Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(end = 12.dp)) {
@@ -282,6 +318,7 @@ private fun CollapsedHeader(
     title: String,
     status: SyncStatus,
     onRefresh: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = FormTheme.colors
@@ -302,9 +339,10 @@ private fun CollapsedHeader(
             ProgressSegments(summary, Modifier.width(72.dp), height = 5.dp)
             Text(summary.score.toString(), style = MaterialTheme.typography.titleMedium, color = colors.signal)
         } else {
-            StatusLabel(status)
+            StatusLabel(status, Modifier.weight(1f, fill = false))
         }
         RefreshButton(status == SyncStatus.Syncing, onRefresh)
+        SettingsButton(onSettingsClick)
     }
 }
 
@@ -369,7 +407,10 @@ private fun ProgressSegments(
 }
 
 @Composable
-private fun StatusLabel(status: SyncStatus) {
+private fun StatusLabel(
+    status: SyncStatus,
+    modifier: Modifier = Modifier,
+) {
     val colors = FormTheme.colors
     val now by rememberCurrentTimeMillis()
     val (text, dotColor) =
@@ -394,10 +435,24 @@ private fun StatusLabel(status: SyncStatus) {
                     null
             }
         }
-    AnimatedContent(targetState = text to dotColor, label = "status") { (label, dot) ->
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    AnimatedContent(
+        targetState = text to dotColor,
+        contentAlignment = Alignment.CenterEnd,
+        label = "status",
+        modifier = modifier,
+    ) { (label, dot) ->
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+        ) {
             dot?.let { PulsingDot(it) }
-            Text(label, style = MaterialTheme.typography.labelMedium, color = dot ?: colors.heroMuted, maxLines = 1)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = dot ?: colors.heroMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -422,6 +477,17 @@ private fun PulsingDot(color: Color) {
             }.clip(CircleShape)
             .background(color),
     )
+}
+
+@Composable
+private fun SettingsButton(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(
+            painterResource(R.drawable.ic_tune),
+            contentDescription = stringResource(R.string.form_settings),
+            tint = FormTheme.colors.onHero,
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -451,5 +517,6 @@ private fun rememberCurrentTimeMillis(): State<Long> =
         }
     }
 
+// A sync that finished after `now` was last refreshed would read "in 0 minutes"; it happened, so cap it at now.
 private fun Instant.relativeTo(nowMillis: Long): CharSequence =
-    DateUtils.getRelativeTimeSpanString(toEpochMilliseconds(), nowMillis, DateUtils.MINUTE_IN_MILLIS)
+    DateUtils.getRelativeTimeSpanString(minOf(toEpochMilliseconds(), nowMillis), nowMillis, DateUtils.MINUTE_IN_MILLIS)

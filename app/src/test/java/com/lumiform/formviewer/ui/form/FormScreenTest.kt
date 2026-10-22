@@ -2,6 +2,9 @@ package com.lumiform.formviewer.ui.form
 
 import android.app.Application
 import androidx.annotation.StringRes
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -15,6 +18,7 @@ import com.google.common.truth.Truth.assertThat
 import com.lumiform.formviewer.R
 import com.lumiform.formviewer.core.domain.model.ChoiceQuestion
 import com.lumiform.formviewer.core.domain.model.FormItem
+import com.lumiform.formviewer.core.domain.model.ImageQuestion
 import com.lumiform.formviewer.core.domain.model.Page
 import com.lumiform.formviewer.core.domain.model.Response
 import com.lumiform.formviewer.core.domain.model.ResponseSet
@@ -69,6 +73,8 @@ class FormScreenTest {
     private var updateAppCount = 0
     private var refreshFailureShownCount = 0
     private val clickedResponses = mutableListOf<Pair<Long, Long>>()
+    private val clickedImages = mutableListOf<Long>()
+    private val showItemIdsChanges = mutableListOf<Boolean>()
 
     private fun string(
         @StringRes id: Int,
@@ -90,6 +96,8 @@ class FormScreenTest {
                     onRefreshFailureShown = { refreshFailureShownCount++ },
                     onResponseClick = { question, responseId -> clickedResponses += question.id to responseId },
                     onUpdateApp = if (canUpdateApp) ({ updateAppCount++ }) else null,
+                    onImageClick = { clickedImages += it },
+                    onShowItemIdsChange = { showItemIdsChanges += it },
                 )
             }
         }
@@ -125,6 +133,63 @@ class FormScreenTest {
         composeRule.onNodeWithText("Yes").performClick()
 
         assertThat(clickedResponses).containsExactly(4L to 42L, 4L to 41L).inOrder()
+    }
+
+    @Test
+    fun image_tapOpensTheViewerForThatQuestion() {
+        val image =
+            listOf(
+                Page(
+                    id = 1,
+                    title = "Inspection",
+                    children = listOf(ImageQuestion(5, "https://example.invalid/a.png", "Fridge")),
+                ),
+            )
+        setScreen(FormUiState(form = content(image)))
+
+        composeRule.onNodeWithContentDescription("Fridge", substring = true).performClick()
+
+        assertThat(clickedImages).containsExactly(5L)
+    }
+
+    @Test
+    fun image_withoutASource_saysSo_andDoesNotOpen() {
+        val image = listOf(Page(id = 1, title = "Inspection", children = listOf(ImageQuestion(5, null, "Fridge"))))
+        setScreen(FormUiState(form = content(image)))
+
+        composeRule.onNodeWithText(string(R.string.form_image_missing)).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Fridge", substring = true).performClick()
+
+        assertThat(clickedImages).isEmpty()
+    }
+
+    @Test
+    fun itemIds_areHiddenByDefault_andShownWhenTheSettingIsOn() {
+        var state by mutableStateOf(FormUiState(form = content()))
+        composeRule.setContent {
+            FormViewerTheme {
+                FormScreen(state, FormLayout.Compact, onRefresh = {}, onRefreshFailureShown = {}, onResponseClick = {
+                    _,
+                    _,
+                    ->
+                })
+            }
+        }
+        composeRule.onNodeWithText("#3").assertDoesNotExist()
+
+        state = state.copy(showItemIds = true)
+
+        listOf("#1", "#2", "#3", "#4").forEach { composeRule.onNodeWithText(it).assertIsDisplayed() }
+    }
+
+    @Test
+    fun settings_openFromTheHeader_andToggleItemIds() {
+        setScreen(FormUiState(form = content()))
+
+        composeRule.onNodeWithContentDescription(string(R.string.form_settings)).performClick()
+        composeRule.onNodeWithText(string(R.string.settings_show_item_ids)).assertIsDisplayed().performClick()
+
+        assertThat(showItemIdsChanges).containsExactly(true)
     }
 
     @Test

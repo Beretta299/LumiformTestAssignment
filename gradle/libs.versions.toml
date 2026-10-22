@@ -4,11 +4,13 @@ kotlin = "2.4.21"
 ksp = "2.3.12"
 hilt = "2.60.1"
 room = "2.8.5"
+datastore = "1.2.1"
 activityCompose = "1.13.0"
 composeBom = "2026.09.00"
 # Beta for the Material 3 Expressive APIs (MaterialExpressiveTheme, MotionScheme.expressive, LoadingIndicator); 1.4.0 keeps them internal.
 material3 = "1.5.0-beta02"
 lifecycle = "2.11.0"
+navigation = "2.10.2"
 coroutines = "1.11.0"
 # 1.11.0 until Android Studio's bundled Kotlin (2.3.20) understands 1.12's generated serializers.
 kotlinxSerialization = "1.11.0"
@@ -29,11 +31,14 @@ robolectric = "4.17"
 truth = "1.4.5"
 turbine = "1.2.1"
 spotless = "8.10.4"
+roborazzi = "1.77.0"
 ktlint = "1.8.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
+androidx-navigation-testing = { module = "androidx.navigation:navigation-testing", version.ref = "navigation" }
 
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
@@ -62,6 +67,8 @@ room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+
 javax-inject = { module = "javax.inject:javax.inject", version.ref = "javaxInject" }
 
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -87,6 +94,9 @@ androidx-test-ext-junit = { module = "androidx.test.ext:junit-ktx", version.ref 
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-accessibility-check = { module = "io.github.takahirom.roborazzi:roborazzi-accessibility-check", version.ref = "roborazzi" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -98,3 +108,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 room = { id = "androidx.room", version.ref = "room" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

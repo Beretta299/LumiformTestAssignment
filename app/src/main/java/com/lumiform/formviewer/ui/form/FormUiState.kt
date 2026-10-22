@@ -10,6 +10,8 @@ data class FormUiState(
     val isConnectionInsecure: Boolean = false,
     /** A pull-to-refresh or Retry that failed while the form is on screen; shown once, then cleared. */
     val refreshFailure: SyncError? = null,
+    /** Shows each item's raw id next to it, for checking the rendering against the source JSON. */
+    val showItemIds: Boolean = false,
 )
 
 sealed interface FormState {

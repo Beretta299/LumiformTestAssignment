@@ -12,8 +12,27 @@
     <string name="form_points">+%1$d</string>
     <string name="form_unsupported_item">Please update the app to the latest version to see this item.</string>
     <string name="form_unsupported_update">Update</string>
+    <string name="form_image_untitled">Image</string>
+    <string name="form_image_description">Image: %1$s</string>
+    <string name="form_image_open">Open image</string>
+    <string name="form_image_unavailable">Image unavailable</string>
+    <string name="form_image_missing">No image attached</string>
+
+    <string name="image_viewer_close">Close</string>
+    <string name="image_viewer_zoom_in">Zoom in</string>
+    <string name="image_viewer_zoom_out">Reset zoom</string>
+    <string name="image_viewer_error">This image couldn\'t be loaded. It shows up once it has been downloaded on a connection.</string>
+    <string name="image_viewer_no_image">This question has no image.</string>
+    <string name="image_viewer_not_found">This image is no longer part of the form.</string>
 
     <string name="form_refresh">Refresh</string>
+    <string name="form_settings">Display settings</string>
+    <string name="form_item_id">#%1$d</string>
+    <string name="form_item_id_description">Item id %1$d</string>
+
+    <string name="settings_title">Display</string>
+    <string name="settings_show_item_ids">Show item ids</string>
+    <string name="settings_show_item_ids_hint">Shows each item\'s id from the source data, to check the structure against it.</string>
     <string name="form_synced_at">Updated %1$s</string>
     <string name="form_never_synced">Not synced yet</string>
     <string name="form_back_online">Back online</string>

@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.lumiform.formviewer.ui.form.FormRoute
+import com.lumiform.formviewer.ui.navigation.FormViewerNavHost
 import com.lumiform.formviewer.ui.theme.FormViewerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             FormViewerTheme {
-                FormRoute()
+                FormViewerNavHost()
             }
         }
     }

@@ -4,9 +4,12 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -18,24 +21,32 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
 import com.lumiform.formviewer.R
 import com.lumiform.formviewer.core.domain.model.ChoiceQuestion
 import com.lumiform.formviewer.core.domain.model.ImageQuestion
 import com.lumiform.formviewer.core.domain.model.TextQuestion
+import com.lumiform.formviewer.ui.navigation.sharedImage
 import com.lumiform.formviewer.ui.theme.FormTheme
 import com.lumiform.formviewer.ui.theme.HierarchyTypography
 
@@ -78,18 +89,20 @@ fun FormRowItem(
     onResponseClick: (ChoiceQuestion, responseId: Long) -> Unit,
     modifier: Modifier = Modifier,
     onUpdateApp: (() -> Unit)? = null,
+    onImageClick: (questionId: Long) -> Unit = {},
+    showItemIds: Boolean = false,
 ) {
     val padded = modifier.padding(horizontal = layout.horizontalPadding)
     when (row) {
         is PageRow -> {
-            PageHeader(row, padded)
+            PageHeader(row, showItemIds, padded)
         }
 
         is SectionRow -> {
             if (rail.onRail) {
-                RailRow(rail, RailNode.None, layout, row.depth, padded) { SectionTitle(row) }
+                RailRow(rail, RailNode.None, layout, row.depth, padded) { SectionTitle(row, showItemIds) }
             } else {
-                SectionTitle(row, padded.padding(top = 8.dp, bottom = if (rail.last) GroupGap else 16.dp))
+                SectionTitle(row, showItemIds, padded.padding(top = 8.dp, bottom = if (rail.last) GroupGap else 16.dp))
             }
         }
 
@@ -100,7 +113,13 @@ fun FormRowItem(
                     is ChoiceQuestion -> if (question.selectedResponseIds.isEmpty()) RailNode.Open else RailNode.Done
                     else -> RailNode.Dot
                 }
-            RailRow(rail, node, layout, row.depth, padded) { QuestionContent(row, layout, onResponseClick) }
+            RailRow(
+                rail,
+                node,
+                layout,
+                row.depth,
+                padded,
+            ) { QuestionContent(row, layout, showItemIds, onResponseClick, onImageClick) }
         }
 
         is UnsupportedRow -> {
@@ -110,7 +129,7 @@ fun FormRowItem(
                 layout,
                 row.depth,
                 padded,
-            ) { UnsupportedItem(onUpdateApp.takeIf { row.isTopLevel }) }
+            ) { UnsupportedItem(row.id.takeIf { showItemIds }, onUpdateApp.takeIf { row.isTopLevel }) }
         }
     }
 }
@@ -118,6 +137,7 @@ fun FormRowItem(
 @Composable
 private fun PageHeader(
     row: PageRow,
+    showItemIds: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.padding(top = 28.dp, bottom = 18.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -125,26 +145,37 @@ private fun PageHeader(
             Text(
                 stringResource(R.string.form_page_number, it, row.pageCount),
                 style = HierarchyTypography.number,
-                color = FormTheme.colors.signal,
+                color = FormTheme.colors.signalText,
             )
         }
-        Text(
-            row.title ?: stringResource(R.string.form_untitled_page),
-            style = HierarchyTypography.page,
-            color = FormTheme.colors.text,
-        )
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                row.title ?: stringResource(R.string.form_untitled_page),
+                style = HierarchyTypography.page,
+                color = FormTheme.colors.text,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (showItemIds) ItemId(row.id, Modifier.padding(bottom = 6.dp))
+        }
     }
 }
 
 @Composable
 private fun SectionTitle(
     row: SectionRow,
+    showItemIds: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val style = HierarchyTypography.section(row.depth)
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(row.number, style = style, color = FormTheme.colors.signal)
-        Text(row.title ?: stringResource(R.string.form_untitled_section), style = style, color = FormTheme.colors.text)
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(row.number, style = style, color = FormTheme.colors.signalText)
+        Text(
+            row.title ?: stringResource(R.string.form_untitled_section),
+            style = style,
+            color = FormTheme.colors.text,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        if (showItemIds) ItemId(row.id)
     }
 }
 
@@ -152,7 +183,9 @@ private fun SectionTitle(
 private fun QuestionContent(
     row: QuestionRow,
     layout: FormLayout,
+    showItemIds: Boolean,
     onResponseClick: (ChoiceQuestion, responseId: Long) -> Unit,
+    onImageClick: (questionId: Long) -> Unit,
 ) {
     val colors = FormTheme.colors
     val question = row.question
@@ -170,38 +203,100 @@ private fun QuestionContent(
                 color = colors.muted,
                 modifier = Modifier.padding(top = 3.dp),
             )
-            label?.let { Text(it, style = HierarchyTypography.question, color = colors.text) }
+            label?.let {
+                Text(
+                    it,
+                    style = HierarchyTypography.question,
+                    color = colors.text,
+                    modifier = Modifier.weight(1f, false),
+                )
+            }
+            if (showItemIds) ItemId(question.id, Modifier.padding(top = 3.dp))
         }
         when (question) {
             is TextQuestion -> Unit
-            is ImageQuestion -> Thumbnail(question, layout)
+            is ImageQuestion -> Thumbnail(question, layout, onImageClick)
             is ChoiceQuestion -> ChoiceQuestionItem(question, onResponseClick)
         }
     }
 }
 
-/** Full width, so it sits centred; Coil sizes the request to this box, so the image is decoded at reduced size. */
+/**
+ * Full width, so it sits centred; Coil sizes the request to this box, so the image is decoded at reduced size. Tapping
+ * opens the viewer, which shows this thumbnail from the memory cache while the full-size image loads.
+ */
 @Composable
 private fun Thumbnail(
     question: ImageQuestion,
     layout: FormLayout,
+    onImageClick: (questionId: Long) -> Unit,
 ) {
-    val trackColor = FormTheme.colors.track
-    val placeholder = remember(trackColor) { ColorPainter(trackColor) }
-    AsyncImage(
-        model = question.src,
-        contentDescription = null,
-        placeholder = placeholder,
-        error = placeholder,
-        fallback = placeholder,
-        contentScale = ContentScale.Crop,
-        modifier = Modifier.fillMaxWidth().height(layout.thumbnailHeight).clip(ImageShape),
-    )
+    val colors = FormTheme.colors
+    val src = question.src
+    val context = LocalPlatformContext.current
+    val request =
+        remember(context, src) {
+            src?.let {
+                ImageRequest
+                    .Builder(context)
+                    .data(it)
+                    .memoryCacheKey(thumbnailMemoryCacheKey(it))
+                    .build()
+            }
+        }
+    var failed by remember(src) { mutableStateOf(false) }
+    // Not just the title: the question line above already reads it, and two identical labels confuse TalkBack users.
+    val description =
+        question.title?.let { stringResource(R.string.form_image_description, it) }
+            ?: stringResource(R.string.form_image_untitled)
+    val openLabel = stringResource(R.string.form_image_open)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(layout.thumbnailHeight)
+                .sharedImage(question.id)
+                .clip(ImageShape)
+                .background(colors.track)
+                .clickable(enabled = src != null, onClickLabel = openLabel, role = Role.Image) {
+                    onImageClick(question.id)
+                }.semantics { contentDescription = description },
+    ) {
+        if (request != null) {
+            AsyncImage(
+                model = request,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                onState = { failed = it is AsyncImagePainter.State.Error },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        if (src == null || failed) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(painterResource(R.drawable.ic_image_off), contentDescription = null, tint = colors.muted)
+                Text(
+                    stringResource(if (src == null) R.string.form_image_missing else R.string.form_image_unavailable),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colors.muted,
+                )
+            }
+        }
+    }
 }
+
+/** Shared with the viewer, which uses the thumbnail as its placeholder. */
+internal fun thumbnailMemoryCacheKey(src: String) = "thumbnail:$src"
 
 /** A top-level item stands in for a whole page, so it also offers [onUpdateApp] (null hides the action). */
 @Composable
-private fun UnsupportedItem(onUpdateApp: (() -> Unit)?) {
+private fun UnsupportedItem(
+    itemId: Long?,
+    onUpdateApp: (() -> Unit)?,
+) {
     val colors = FormTheme.colors
     Column(
         Modifier
@@ -217,7 +312,9 @@ private fun UnsupportedItem(onUpdateApp: (() -> Unit)?) {
                 stringResource(R.string.form_unsupported_item),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.text,
+                modifier = Modifier.weight(1f),
             )
+            itemId?.let { ItemId(it) }
         }
         if (onUpdateApp != null) {
             TextButton(onClick = onUpdateApp, modifier = Modifier.align(Alignment.End)) {
@@ -225,6 +322,21 @@ private fun UnsupportedItem(onUpdateApp: (() -> Unit)?) {
             }
         }
     }
+}
+
+/** The item's raw id from the payload, shown only when the display setting is on. */
+@Composable
+private fun ItemId(
+    id: Long,
+    modifier: Modifier = Modifier,
+) {
+    val description = stringResource(R.string.form_item_id_description, id)
+    Text(
+        stringResource(R.string.form_item_id, id),
+        style = HierarchyTypography.number,
+        color = FormTheme.colors.muted,
+        modifier = modifier.semantics { contentDescription = description },
+    )
 }
 
 private enum class RailNode { None, Dot, Open, Done }

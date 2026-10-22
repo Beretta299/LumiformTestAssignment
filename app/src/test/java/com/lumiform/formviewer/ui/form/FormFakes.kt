@@ -8,6 +8,7 @@ import com.lumiform.formviewer.core.domain.model.SyncState
 import com.lumiform.formviewer.core.domain.repository.ConnectionSecurityRepository
 import com.lumiform.formviewer.core.domain.repository.ConnectivityRepository
 import com.lumiform.formviewer.core.domain.repository.FormRepository
+import com.lumiform.formviewer.core.domain.repository.SettingsRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,7 @@ internal class FakeFormRepository : FormRepository {
     val syncState = MutableStateFlow(SyncState(lastSyncedAt = null, lastError = null))
     val responseSets = mutableMapOf<Long, ResponseSet>()
     val selections = mutableMapOf<Long, Set<Long>>()
+    val imageQuestions = mutableMapOf<Long, ImageQuestion>()
     var syncResult: SyncResult = SyncResult.Success
 
     /** When set, `sync` suspends until it completes, so a test can observe a sync in flight. */
@@ -42,7 +44,15 @@ internal class FakeFormRepository : FormRepository {
         selections[responseSetId] = transform(responseSet, selections[responseSetId].orEmpty())
     }
 
-    override suspend fun getImageQuestion(id: Long): ImageQuestion? = null
+    override suspend fun getImageQuestion(id: Long): ImageQuestion? = imageQuestions[id]
+}
+
+internal class FakeSettingsRepository : SettingsRepository {
+    override val showItemIds = MutableStateFlow(false)
+
+    override suspend fun setShowItemIds(show: Boolean) {
+        showItemIds.value = show
+    }
 }
 
 internal class FakeConnectivityRepository : ConnectivityRepository {

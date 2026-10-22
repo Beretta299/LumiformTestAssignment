@@ -12,7 +12,9 @@ import com.lumiform.formviewer.core.domain.model.TextQuestion
 import com.lumiform.formviewer.core.domain.usecase.ObserveConnectionSecurityUseCase
 import com.lumiform.formviewer.core.domain.usecase.ObserveConnectivityUseCase
 import com.lumiform.formviewer.core.domain.usecase.ObserveFormUseCase
+import com.lumiform.formviewer.core.domain.usecase.ObserveShowItemIdsUseCase
 import com.lumiform.formviewer.core.domain.usecase.ObserveSyncStateUseCase
+import com.lumiform.formviewer.core.domain.usecase.SetShowItemIdsUseCase
 import com.lumiform.formviewer.core.domain.usecase.SyncFormUseCase
 import com.lumiform.formviewer.core.domain.usecase.ToggleResponseUseCase
 import kotlinx.coroutines.CompletableDeferred
@@ -39,6 +41,7 @@ class FormViewModelTest {
     private val repository = FakeFormRepository()
     private val connectivity = FakeConnectivityRepository()
     private val security = FakeConnectionSecurityRepository()
+    private val settings = FakeSettingsRepository()
 
     private val syncedAt = Instant.fromEpochMilliseconds(1_000)
     private val page = Page(id = 1, title = "Page", children = listOf(TextQuestion(id = 2, content = "Hello")))
@@ -61,6 +64,8 @@ class FormViewModelTest {
                 observeSyncState = ObserveSyncStateUseCase(repository),
                 observeConnectivity = ObserveConnectivityUseCase(connectivity),
                 observeConnectionSecurity = ObserveConnectionSecurityUseCase(security),
+                observeShowItemIds = ObserveShowItemIdsUseCase(settings),
+                setShowItemIds = SetShowItemIdsUseCase(settings),
                 syncForm = SyncFormUseCase(repository),
                 toggleResponse = ToggleResponseUseCase(repository),
                 defaultDispatcher = dispatcher,
@@ -68,6 +73,18 @@ class FormViewModelTest {
         backgroundScope.launch { viewModel.uiState.collect {} }
         return viewModel
     }
+
+    @Test
+    fun showItemIds_followsTheStoredSetting_andTheToggleSavesIt() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            assertFalse(viewModel.uiState.value.showItemIds)
+
+            viewModel.onShowItemIdsChange(true)
+
+            assertTrue(settings.showItemIds.value)
+            assertTrue(viewModel.uiState.value.showItemIds)
+        }
 
     @Test
     fun form_isLoading_untilAnythingIsStored() =

@@ -28,6 +28,7 @@ class FormScreenStateTest {
         pullToRefreshState = PullToRefreshState(),
         snackbarHostState = SnackbarHostState(),
         entrancePlayed = mutableStateOf(false),
+        settingsOpen = mutableStateOf(false),
         wasOffline = wasOffline,
     )
 
