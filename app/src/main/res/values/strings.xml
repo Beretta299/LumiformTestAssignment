@@ -13,6 +13,7 @@
     <string name="form_unsupported_item">Please update the app to the latest version to see this item.</string>
     <string name="form_unsupported_update">Update</string>
     <string name="form_image_untitled">Image</string>
+    <string name="form_image_description">Image: %1$s</string>
     <string name="form_image_open">Open image</string>
     <string name="form_image_unavailable">Image unavailable</string>
     <string name="form_image_missing">No image attached</string>

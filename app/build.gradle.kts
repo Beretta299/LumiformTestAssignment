@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -94,5 +95,12 @@ dependencies {
     testImplementation(libs.compose.ui.test.junit4)
     testImplementation(libs.androidx.test.espresso.core)
     testImplementation(libs.androidx.navigation.testing)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.accessibility.check)
     debugImplementation(libs.compose.ui.test.manifest)
+}
+
+roborazzi {
+    outputDir.set(file("src/test/screenshots"))
 }

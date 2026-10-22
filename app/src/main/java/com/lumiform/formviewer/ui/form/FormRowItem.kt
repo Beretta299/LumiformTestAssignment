@@ -143,7 +143,7 @@ private fun PageHeader(
             Text(
                 stringResource(R.string.form_page_number, it, row.pageCount),
                 style = HierarchyTypography.number,
-                color = FormTheme.colors.signal,
+                color = FormTheme.colors.signalText,
             )
         }
         Text(
@@ -161,7 +161,7 @@ private fun SectionTitle(
 ) {
     val style = HierarchyTypography.section(row.depth)
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(row.number, style = style, color = FormTheme.colors.signal)
+        Text(row.number, style = style, color = FormTheme.colors.signalText)
         Text(row.title ?: stringResource(R.string.form_untitled_section), style = style, color = FormTheme.colors.text)
     }
 }
@@ -223,7 +223,10 @@ private fun Thumbnail(
             }
         }
     var failed by remember(src) { mutableStateOf(false) }
-    val description = question.title ?: stringResource(R.string.form_image_untitled)
+    // Not just the title: the question line above already reads it, and two identical labels confuse TalkBack users.
+    val description =
+        question.title?.let { stringResource(R.string.form_image_description, it) }
+            ?: stringResource(R.string.form_image_untitled)
     val openLabel = stringResource(R.string.form_image_open)
     Box(
         contentAlignment = Alignment.Center,
