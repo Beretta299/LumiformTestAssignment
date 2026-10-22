@@ -1,6 +1,6 @@
 # Implementation Plan — Lumiform Android Code Challenge
 
-Status: **v6. Milestones 1–8 (setup, network, domain, database, repository, background sync, form screen, choice questions) are implemented; 7–8 await review.**
+Status: **v7. Milestones 1–11 are implemented (9–11: image viewer, screenshots and accessibility, CI and README); 9–11 await review.**
 
 ### Decisions recorded after v2
 
@@ -92,6 +92,10 @@ I don't think item id for each json object is good idea, if you can find who are
    rather than wiped (see Q16).
 
    Hide them by default, add settings button, to show ids on demand, it'll be radio switch.
+
+   **→ Built:** a settings button in the header opens a "Display" sheet with a "Show item ids" switch. The setting is
+   a domain `SettingsRepository` backed by Preferences DataStore (not Room: it isn't form data and shouldn't share the
+   form's schema migrations). Ids show as a muted `#7` next to pages, sections, questions and unknown items.
 
    **Your call.**
 
@@ -590,11 +594,45 @@ Order changed: domain now comes after network and database.
    - The selection comes only from Room; a tap goes to `ToggleResponseUseCase`.
    - Options have the radio-button role inside a `selectableGroup`, tiles the checkbox role.
    - Points show only when `score` is set, with a "Score N" content description.
-9. **Image viewer:** thumbnail with placeholder/error, shared-element nav, zoom/pan, double-tap,
-   pinch-out and swipe-down dismiss. *Tests:* nav and gesture UI tests.
-10. **Screenshots and accessibility:** Roborazzi matrix, ATF checks, fixes.
-11. **CI finalisation + README:** setup, architecture diagram, decisions and trade-offs
-    (including ids, prefetch, pinning, modules), testing strategy, screenshots, future work.
+9. ✅ **Image viewer:** thumbnail with placeholder/error, shared-element nav, zoom/pan, double-tap,
+   pinch-out and swipe-down dismiss.
+   *Tests:* 12 pure zoom-rule tests, 6 viewer UI tests (close, double-tap, swipe and pinch-out dismiss, missing
+   question/image), 2 ViewModel tests, 2 thumbnail tests.
+   Decisions:
+   - **Navigation Compose 2.10 with type-safe routes** (`FormDestination`, `ImageDestination(questionId)`). Only the id
+     travels; `ImageViewerViewModel` reads the question through `GetImageQuestionUseCase`, so a restored route shows a
+     "no longer part of the form" message if a sync removed it.
+   - **Shared element:** `SharedTransitionLayout` around the `NavHost`; its scopes reach the thumbnail through
+     composition locals (`sharedImage(questionId)`), which are null outside the nav host, so previews and single-screen
+     tests need nothing. The form stays put under the viewer, which fades in.
+   - **The viewer shows the thumbnail while the full image loads:** thumbnails use an explicit memory cache key, and the
+     viewer's request (`Size.ORIGINAL`, for zoom detail) uses it as `placeholderMemoryCacheKey`.
+   - **Gesture rules are a pure function** (`ZoomMath`: `applyGesture`, `toggleZoom`, `onGestureEnd`, `dismissProgress`)
+     over an immutable `ZoomTransform`, unit-tested without a device; the composable only feeds pointer events and
+     animates to the result. Double-tap 1× ↔ 2.5× around the tap; pinch 0.5×–5×; pan clamped to the image; release below
+     0.8× or after a swipe of 18 % of the height dismisses; the scrim and title fade with the dismiss progress.
+   - Zoom is also a TalkBack custom action, since gestures aren't reachable with a screen reader; a close button covers
+     dismissal. Double navigation from quick taps is dropped unless the entry is resumed.
+   - Thumbnail error and "no image attached" states with an icon; failed full images offer Retry.
+   - The status bar icons turn light while the viewer shows, since its scrim is dark in both themes.
+   - Found on the emulator: a sync finishing just after the header's clock tick read "Updated in 0 minutes"; the
+     relative time is now capped at the present.
+10. ✅ **Screenshots and accessibility:** Roborazzi matrix, ATF checks, fixes.
+    *Tests:* 17 screenshots (light/dark, font 1.0/1.5/2.0, small phone, phone, landscape, foldable, tablet, every
+    state, viewer), 8 ATF passes with warnings as failures.
+    - Images come from Coil's inspection-mode preview handler (a fixed gradient), so captures never touch the network.
+    - Baselines live in `app/src/test/screenshots` and double as README images; a 1 % pixel tolerance absorbs macOS vs
+      Linux anti-aliasing.
+    - A still screen was now and then captured blank before its first frame; the capture helper invalidates the root
+      and waits for idle first.
+    - **Fixes found by the checks:** header text clipped at large font sizes (heights now grow per line of text, since
+      Android scales fonts non-linearly); the accent orange on paper was 2.8:1 for page/section numbers (new
+      `signalText` token, 4.6:1); the thumbnail repeated the question title as its label (now "Image: …"); a long sync
+      status pushed the refresh button out (it now ellipsizes).
+11. ✅ **CI finalisation + README:** GitHub Actions runs spotless, lint, all JVM tests, Roborazzi verify and a debug
+    build; the README covers setup, architecture, decisions, testing and future work.
+    Not done: the instrumented end-to-end and migration tests and Kover (listed as future work in the README), and the
+    debug "show ids" toggle from Q4.
 
 ---
 
